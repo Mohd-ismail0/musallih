@@ -1,5 +1,5 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import PgBoss from 'pg-boss';
+import PgBoss = require('pg-boss');
 
 @Injectable()
 export class JobsService implements OnModuleInit, OnModuleDestroy {

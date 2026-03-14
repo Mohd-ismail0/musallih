@@ -43,4 +43,4 @@ npm run db:migrate
 npm run start:dev
 ```
 
-If Docker Desktop is not running, start it first. If you use a local PostgreSQL service instead of Docker, update `DATABASE_URL` in `.env` to match your local credentials.
+If Docker Desktop is not running, start it first. If port 5432 is used by another PostgreSQL, Docker Postgres exposes 5433 instead; `DATABASE_URL` in `.env` uses `localhost:5433`.
