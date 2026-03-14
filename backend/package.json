@@ -25,6 +25,7 @@
     "contracts:validate": "node scripts/validate-contracts.js"
   },
   "dependencies": {
+    "@fastify/static": "^9.0.0",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^3.2.0",
     "@nestjs/core": "^11.0.0",
@@ -38,16 +39,16 @@
     "fastify": "^5.0.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
+    "pg-boss": "^10.0.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "pg-boss": "^10.0.0",
     "uuid": "^10.0.0",
     "zod": "^3.23.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
-    "@nestjs/testing": "^11.0.0",
     "@nestjs/schematics": "^10.0.0",
+    "@nestjs/testing": "^11.0.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.0.0",
     "@types/passport-jwt": "^4.0.0",
