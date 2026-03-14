@@ -31,6 +31,18 @@ npm run start:dev
 API: http://localhost:3000/v1/health
 Docs: http://localhost:3000/api/docs
 
+## Required Environment Variables
+
+- `DATABASE_URL`
+- `REDIS_URL`
+- `JWT_SECRET` (minimum 24 chars)
+- `JWT_EXPIRES_IN_SECONDS`
+- `PORT`
+- `NODE_ENV`
+- `JOBS_ENABLED` (true/false)
+- `API_RATE_LIMIT_MAX`
+- `API_RATE_LIMIT_WINDOW`
+
 ## Common Local Issue: Prisma P1000 (auth failed)
 
 If you previously started Postgres with a different password, Docker volume state can keep old credentials and Prisma will fail with `P1000`.
@@ -44,3 +56,9 @@ npm run start:dev
 ```
 
 If Docker Desktop is not running, start it first. If port 5432 is used by another PostgreSQL, Docker Postgres exposes 5433 instead; `DATABASE_URL` in `.env` uses `localhost:5433`.
+
+## Production Notes
+
+- Never use the development JWT secret in production.
+- `/v1/health/ready` now verifies database connectivity and job-system status.
+- If `JOBS_ENABLED=true` and pg-boss fails to start in production, startup fails fast.

@@ -3,9 +3,20 @@ import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import helmet from '@fastify/helmet';
+import rateLimit from '@fastify/rate-limit';
+import { getEnv } from './config/env';
 
 async function bootstrap() {
+  const env = getEnv();
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+  app.enableShutdownHooks();
+  await app.register(helmet as never);
+  await app.register(rateLimit as never, {
+    global: true,
+    max: env.API_RATE_LIMIT_MAX,
+    timeWindow: env.API_RATE_LIMIT_WINDOW,
+  });
   app.setGlobalPrefix('v1');
   app.useGlobalPipes(
     new ValidationPipe({
@@ -22,7 +33,7 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
-  const port = process.env.PORT || 3000;
+  const port = env.PORT;
   await app.listen(port, '0.0.0.0');
 }
 

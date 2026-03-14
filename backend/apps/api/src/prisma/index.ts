@@ -1,1 +1,1 @@
-export { PrismaService } from '@musallih/persistence';
+export { PrismaService } from '../../../../libs/persistence/src/prisma.service';
