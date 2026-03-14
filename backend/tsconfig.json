@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2022",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "strictBindCallApply": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "paths": {
+      "@musallih/shared": ["libs/shared/src"],
+      "@musallih/shared/*": ["libs/shared/src/*"],
+      "@musallih/contracts": ["libs/contracts/src"],
+      "@musallih/persistence": ["libs/persistence/src"],
+      "@musallih/persistence/*": ["libs/persistence/src/*"],
+      "@musallih/domain/auth": ["libs/domain/auth/src"]
+    }
+  }
+}

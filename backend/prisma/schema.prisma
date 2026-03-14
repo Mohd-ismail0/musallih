@@ -1,0 +1,431 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========== Identity & Family Domain ==========
+model User {
+  id             String    @id @default(uuid())
+  fullName       String    @map("full_name")
+  phone          String?
+  email          String?
+  dob            DateTime? @db.Date
+  gender         String?
+  maritalStatus  String?   @map("marital_status")
+  cityId         String?   @map("city_id")
+  educationLevel String?   @map("education_level")
+  fieldOfStudy   String?   @map("field_of_study")
+  occupation     String?
+  incomeRange    String?   @map("income_range")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  familiesAsPrimary    Family[]           @relation("FamilyPrimaryUser")
+  familyMembers        FamilyMember[]
+  userSchools          UserSchool[]
+  authorityAdmins      AuthorityAdmin[]
+  organizationTeams    OrganizationTeam[]
+  serviceRequests      ServiceRequest[]   @relation("ServiceRequestRequester")
+  consentProfiles      ConsentProfile[]
+  accessLogsAsActor    AccessLog[]        @relation("AccessLogActor")
+  accessLogsAsTarget   AccessLog[]        @relation("AccessLogTarget")
+  oauthTokens          OAuthToken[]
+}
+
+model Family {
+  id             String   @id @default(uuid())
+  primaryUserId  String   @map("primary_user_id")
+  familyName     String   @map("family_name")
+  address        String?
+  cityId         String?  @map("city_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  primaryUser    User           @relation("FamilyPrimaryUser", fields: [primaryUserId], references: [id])
+  members        FamilyMember[]
+  serviceRequests ServiceRequest[]
+}
+
+model FamilyMember {
+  id              String   @id @default(uuid())
+  familyId        String   @map("family_id")
+  userId          String?  @map("user_id")
+  name            String
+  relation        String
+  dob             DateTime? @db.Date
+  gender          String?
+  educationLevel  String?  @map("education_level")
+  occupation      String?
+  incomeRange     String?  @map("income_range")
+
+  family  Family             @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  user    User?              @relation(fields: [userId], references: [id])
+  schools FamilyMemberSchool[]
+}
+
+model SchoolOfThought {
+  id       String  @id @default(uuid())
+  name     String
+  category String // Sunni, Shia, Other
+
+  userSchools          UserSchool[]
+  familyMemberSchools  FamilyMemberSchool[]
+  organizationSchools  OrganizationSchool[]
+}
+
+model UserSchool {
+  userId    String @map("user_id")
+  schoolId  String @map("school_id")
+  isPrimary Boolean @default(false) @map("is_primary")
+
+  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  school SchoolOfThought @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@id([userId, schoolId])
+}
+
+model FamilyMemberSchool {
+  familyMemberId String  @map("family_member_id")
+  schoolId       String  @map("school_id")
+  isPrimary      Boolean @default(false) @map("is_primary")
+
+  familyMember FamilyMember     @relation(fields: [familyMemberId], references: [id], onDelete: Cascade)
+  school       SchoolOfThought  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@id([familyMemberId, schoolId])
+}
+
+// ========== Authority (before Organization - FK dependency) ==========
+model Authority {
+  id           String   @id @default(uuid())
+  name         String
+  level        String   // CITY, STATE, COUNTRY, GLOBAL
+  parentId     String?  @map("parent_id")
+  geoBoundary  String?  @map("geo_boundary") // PostGIS: store WKT/GeoJSON; use raw SQL for spatial
+
+  parent       Authority?        @relation("AuthorityHierarchy", fields: [parentId], references: [id])
+  children     Authority[]       @relation("AuthorityHierarchy")
+  admins       AuthorityAdmin[]
+  organizations Organization[]
+}
+
+model AuthorityAdmin {
+  id          String @id @default(uuid())
+  authorityId String @map("authority_id")
+  userId      String @map("user_id")
+  role        String
+
+  authority Authority @relation(fields: [authorityId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([authorityId, userId])
+}
+
+// ========== Organization Domain ==========
+model Organization {
+  id                 String   @id @default(uuid())
+  name               String
+  type               String   // MASJID, MADRASA, EDUCATION, BURIAL, WELFARE, BUSINESS, NGO
+  description        String?
+  geoLocation        String?  @map("geo_location") // PostGIS
+  authorityId        String   @map("authority_id")
+  verificationStatus String   @map("verification_status")
+  primaryContact     String?  @map("primary_contact")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  authority           Authority             @relation(fields: [authorityId], references: [id])
+  teams               OrganizationTeam[]
+  schools             OrganizationSchool[]
+  masjidPrayerConfig  MasjidPrayerConfig?
+  masjidPrayerTimes   MasjidPrayerTime[]
+  services            Service[]
+  activities          Activity[]
+  serviceRequests     ServiceRequest[]
+  announcements       Announcement[]
+  donationCampaigns   DonationCampaign[]
+  webinars            Webinar[]
+  businessProfile     BusinessProfile?
+  adCampaigns         AdCampaign[]
+  consentProfiles     ConsentProfile[]
+  webhookSubscriptions WebhookSubscription[]
+}
+
+model OrganizationTeam {
+  id              String  @id @default(uuid())
+  organizationId  String  @map("organization_id")
+  userId          String  @map("user_id")
+  role            String
+  permissionsScope String? @map("permissions_scope")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@unique([organizationId, userId])
+}
+
+model OrganizationSchool {
+  organizationId String  @map("organization_id")
+  schoolId       String  @map("school_id")
+  isPrimary      Boolean @default(false) @map("is_primary")
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  school       SchoolOfThought @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@id([organizationId, schoolId])
+}
+
+// ========== Masjid & Religious ==========
+model MasjidPrayerConfig {
+  id                String @id @default(uuid())
+  organizationId    String @unique @map("organization_id")
+  calculationMethod String @map("calculation_method")
+  fajrAngle         Float  @map("fajr_angle")
+  ishaAngle         Float  @map("isha_angle")
+  asrMethod         String @map("asr_method")
+  highLatitudeRule  String? @map("high_latitude_rule")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model MasjidPrayerTime {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  date           DateTime @db.Date
+  fajrStart      DateTime @map("fajr_start")
+  sunrise        DateTime
+  dhuhr          DateTime
+  asr            DateTime
+  maghrib        DateTime
+  isha           DateTime
+  fajrEnd        DateTime @map("fajr_end")
+  ishaEnd        DateTime @map("isha_end")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, date])
+}
+
+model IslamicCalendarDay {
+  id             String   @id @default(uuid())
+  gregorianDate  DateTime @unique @db.Date @map("gregorian_date")
+  hijriDate      String   @map("hijri_date")
+  hijriMonth     Int      @map("hijri_month")
+  hijriYear      Int      @map("hijri_year")
+  isRamadan      Boolean  @default(false) @map("is_ramadan")
+  islamicEvents  String?  @map("islamic_events") // JSON array
+}
+
+// ========== Consent & Access Log ==========
+model ConsentProfile {
+  id             String    @id @default(uuid())
+  userId         String    @map("user_id")
+  organizationId String    @map("organization_id")
+  scopeJson      String    @map("scope_json")
+  validFrom      DateTime  @map("valid_from")
+  validTo        DateTime? @map("valid_to")
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+}
+
+model AccessLog {
+  id              String    @id @default(uuid())
+  actorUserId     String    @map("actor_user_id")
+  targetUserId    String?   @map("target_user_id")
+  organizationId  String?   @map("organization_id")
+  action          String
+  accessedFields  String?   @map("accessed_fields") // JSON
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  actor  User          @relation("AccessLogActor", fields: [actorUserId], references: [id])
+  target User?         @relation("AccessLogTarget", fields: [targetUserId], references: [id])
+}
+
+// ========== Services, Activities, Requests ==========
+model Service {
+  id                 String  @id @default(uuid())
+  organizationId     String  @map("organization_id")
+  name               String
+  category           String
+  description        String?
+  appointmentEnabled Boolean @default(false) @map("appointment_enabled")
+  requestEnabled     Boolean @default(true) @map("request_enabled")
+
+  organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  serviceRequests ServiceRequest[]
+}
+
+model Activity {
+  id             String    @id @default(uuid())
+  organizationId String    @map("organization_id")
+  type           String    // event, class, drive
+  title          String
+  description    String?
+  startTime      DateTime  @map("start_time")
+  endTime        DateTime  @map("end_time")
+  recurrence     String?   // JSON
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model ServiceRequest {
+  id               String   @id @default(uuid())
+  requesterUserId  String   @map("requester_user_id")
+  familyId         String?  @map("family_id")
+  organizationId   String   @map("organization_id")
+  serviceId        String   @map("service_id")
+  urgencyLevel     String?  @map("urgency_level")
+  description      String?
+  status           String   // Draft, Submitted, Acknowledged, etc.
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  requester    User          @relation("ServiceRequestRequester", fields: [requesterUserId], references: [id])
+  family       Family?       @relation(fields: [familyId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  service      Service       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  appointment  Appointment?
+}
+
+model Appointment {
+  id                  String   @id @default(uuid())
+  serviceRequestId    String   @unique @map("service_request_id")
+  scheduledAt         DateTime @map("scheduled_at")
+  assignedToId        String?  @map("assigned_to_id")
+  status              String
+
+  serviceRequest ServiceRequest   @relation(fields: [serviceRequestId], references: [id], onDelete: Cascade)
+  assignedTo     OrganizationTeam? @relation(fields: [assignedToId], references: [id])
+}
+
+// ========== Announcements, Donations, Webinars ==========
+model Announcement {
+  id             String    @id @default(uuid())
+  organizationId String    @map("organization_id")
+  authorityId    String?   @map("authority_id")
+  title          String
+  body           String
+  targetScope    String?   @map("target_scope")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model DonationCampaign {
+  id             String    @id @default(uuid())
+  organizationId String    @map("organization_id")
+  title          String
+  goalAmount     Decimal   @map("goal_amount") @db.Decimal(14, 2)
+  currentAmount  Decimal   @default(0) @map("current_amount") @db.Decimal(14, 2)
+  startDate      DateTime  @map("start_date") @db.Date
+  endDate        DateTime  @map("end_date") @db.Date
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model Webinar {
+  id             String    @id @default(uuid())
+  organizationId String    @map("organization_id")
+  title          String
+  liveUrl        String?   @map("live_url")
+  startTime      DateTime  @map("start_time")
+  capacity       Int?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+// ========== Business & Ads ==========
+model BusinessProfile {
+  id             String  @id @default(uuid())
+  organizationId String  @unique @map("organization_id")
+  category       String
+  documents      String? // JSON
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model AdCampaign {
+  id               String   @id @default(uuid())
+  advertiserOrgId  String   @map("advertiser_org_id")
+  geoScope         String   @map("geo_scope") // RADIUS, CITY, STATE, COUNTRY, GLOBAL
+  budget           Decimal  @db.Decimal(14, 2)
+  startDate        DateTime @map("start_date") @db.Date
+  endDate          DateTime @map("end_date") @db.Date
+  status           String   @default("Draft") // Draft, Submitted, Moderation, Approved, etc.
+
+  advertiserOrg Organization    @relation(fields: [advertiserOrgId], references: [id], onDelete: Cascade)
+  adEvents      AdEvent[]
+}
+
+// ========== Ads Revenue Ledger (append-only, immutable) ==========
+model AdEvent {
+  id              String   @id @default(uuid())
+  campaignId      String   @map("campaign_id")
+  eventType       String   @map("event_type") // impression, click, etc.
+  billableAmount  Decimal  @map("billable_amount") @db.Decimal(14, 4)
+  geoScope        String   @map("geo_scope")
+  jurisdictionIds String?  @map("jurisdiction_ids") // JSON array
+  occurredAt      DateTime @default(now()) @map("occurred_at")
+
+  campaign        AdCampaign      @relation(fields: [campaignId], references: [id])
+  revenueLedgers  RevenueLedger[]
+}
+
+model RevenueLedger {
+  id               String    @id @default(uuid())
+  adEventId        String    @map("ad_event_id")
+  grossAmount      Decimal   @map("gross_amount") @db.Decimal(14, 4)
+  platformFee      Decimal   @map("platform_fee") @db.Decimal(14, 4)
+  localPool        Decimal   @map("local_pool") @db.Decimal(14, 4)
+  authorityPool    Decimal   @map("authority_pool") @db.Decimal(14, 4)
+  settlementStatus String    @default("PENDING") @map("settlement_status")
+  settledAt        DateTime? @map("settled_at")
+
+  adEvent      AdEvent             @relation(fields: [adEventId], references: [id])
+  distributions RevenueDistribution[]
+}
+
+model RevenueDistribution {
+  id            String   @id @default(uuid())
+  ledgerId      String   @map("ledger_id")
+  recipientType String   @map("recipient_type")
+  recipientId   String   @map("recipient_id")
+  amount        Decimal  @db.Decimal(14, 4)
+  period        String   // e.g. "2025-03"
+
+  ledger RevenueLedger @relation(fields: [ledgerId], references: [id])
+}
+
+// ========== OAuth & Partner ==========
+model OAuthClient {
+  id           String   @id @default(uuid())
+  name         String
+  redirectUris String   @map("redirect_uris") // JSON array
+  scopes       String?  // JSON array
+
+  tokens OAuthToken[]
+}
+
+model OAuthToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  clientId  String   @map("client_id")
+  scopes    String   // JSON array
+  expiresAt DateTime @map("expires_at")
+
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model WebhookSubscription {
+  id           String  @id @default(uuid())
+  organizationId String @map("organization_id")
+  callbackUrl  String  @map("callback_url")
+  events       String  // JSON array
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
