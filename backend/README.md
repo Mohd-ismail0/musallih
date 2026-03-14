@@ -16,13 +16,13 @@ API-first modular monolith for the Musallih Open Islamic Civic Infrastructure Pl
 npm install
 
 # Start infra
-docker-compose up -d postgres redis minio
+npm run db:up
 
 # Copy env
 cp .env.example .env
 
 # Migrations (when schema exists)
-npm run prisma:migrate:dev
+npm run db:migrate
 
 # Run
 npm run start:dev
@@ -30,3 +30,17 @@ npm run start:dev
 
 API: http://localhost:3000/v1/health
 Docs: http://localhost:3000/api/docs
+
+## Common Local Issue: Prisma P1000 (auth failed)
+
+If you previously started Postgres with a different password, Docker volume state can keep old credentials and Prisma will fail with `P1000`.
+
+Fix:
+
+```bash
+npm run db:reset
+npm run db:migrate
+npm run start:dev
+```
+
+If Docker Desktop is not running, start it first. If you use a local PostgreSQL service instead of Docker, update `DATABASE_URL` in `.env` to match your local credentials.
