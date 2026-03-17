@@ -13,6 +13,22 @@ const envSchema = z.object({
     .transform((v) => (v ?? 'true').toLowerCase() === 'true'),
   API_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(200),
   API_RATE_LIMIT_WINDOW: z.string().default('1 minute'),
+  CORS_ORIGINS: z
+    .string()
+    .optional()
+    .transform((v) =>
+      v
+        ? v
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : ['http://localhost:3000', 'http://localhost:5173'],
+    ),
+  // Firebase Admin (required for auth token exchange)
+  FIREBASE_PROJECT_ID: z.string().optional(),
+  FIREBASE_CLIENT_EMAIL: z.string().optional(),
+  FIREBASE_PRIVATE_KEY: z.string().optional(),
+  GOOGLE_APPLICATION_CREDENTIALS: z.string().optional(),
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

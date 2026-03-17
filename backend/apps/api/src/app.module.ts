@@ -5,6 +5,7 @@ import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { PrismaModule } from './prisma/prisma.module';
+import { FirebaseModule } from './firebase/firebase.module';
 import { IdentityModule } from './identity/identity.module';
 import { OrganizationModule } from './organization/organization.module';
 import { AuthorityModule } from './authority/authority.module';
@@ -20,6 +21,7 @@ import { DonationsModule } from './donations/donations.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
+    FirebaseModule,
     AuthModule,
     HealthModule,
     IdentityModule,

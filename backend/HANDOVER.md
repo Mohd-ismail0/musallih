@@ -19,6 +19,9 @@ API-first modular monolith for the Musallih platform. Built with NestJS (Fastify
 - `GET /v1/prayer/times` – Prayer times
 - `GET /v1/calendar/hijri` – Hijri date
 
+### Auth (Firebase token exchange)
+- `POST /v1/auth/token` – Exchange Firebase ID token for Musallih JWT (body: `{ "id_token": "..." }`)
+
 ### Protected (Bearer JWT)
 - `GET /v1/identity/users/:id` – Get user
 

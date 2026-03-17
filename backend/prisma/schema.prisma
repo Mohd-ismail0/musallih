@@ -10,6 +10,7 @@ datasource db {
 // ========== Identity & Family Domain ==========
 model User {
   id             String    @id @default(uuid())
+  firebaseUid    String?   @unique @map("firebase_uid")
   fullName       String    @map("full_name")
   phone          String?
   email          String?

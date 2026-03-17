@@ -9,7 +9,14 @@ import { getEnv } from './config/env';
 
 async function bootstrap() {
   const env = getEnv();
-  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+  const adapter = new FastifyAdapter();
+  adapter.enableCors({
+    origin: env.CORS_ORIGINS,
+    credentials: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
+  const app = await NestFactory.create<NestFastifyApplication>(AppModule, adapter);
   app.enableShutdownHooks();
   await app.register(helmet as never);
   await app.register(rateLimit as never, {

@@ -14,4 +14,4 @@ COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/prisma ./prisma
 ENV NODE_ENV=production
 EXPOSE 3000
-CMD ["node", "dist/apps/api/main.js"]
+CMD ["node", "dist/apps/api/src/main.js"]
