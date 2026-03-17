@@ -1,5 +1,8 @@
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, IsIn, ValidateIf } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+const BRANCH_TYPES = ['STANDALONE', 'HEADQUARTERS', 'BRANCH'] as const;
+export type BranchType = (typeof BRANCH_TYPES)[number];
 
 export class CreateOrganizationDto {
   @ApiProperty()
@@ -13,6 +16,21 @@ export class CreateOrganizationDto {
   @ApiProperty()
   @IsString()
   authorityId: string;
+
+  @ApiPropertyOptional({ description: 'Parent organization ID when creating a branch' })
+  @IsOptional()
+  @IsString()
+  parentOrganizationId?: string;
+
+  @ApiPropertyOptional({
+    enum: BRANCH_TYPES,
+    description: 'STANDALONE (default), HEADQUARTERS (has branches), BRANCH (child of parent)',
+  })
+  @IsOptional()
+  @IsString()
+  @IsIn(BRANCH_TYPES)
+  @ValidateIf((o) => o.branchType != null)
+  branchType?: BranchType;
 
   @ApiPropertyOptional()
   @IsOptional()

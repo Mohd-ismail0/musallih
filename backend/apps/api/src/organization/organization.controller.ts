@@ -16,9 +16,23 @@ export class OrganizationController {
     return this.organization.create(dto);
   }
 
+  @Get(':id/branches')
+  @Public()
+  @ApiOperation({ summary: 'List branches of an organization' })
+  findBranches(@Param('id') id: string) {
+    return this.organization.findBranches(id);
+  }
+
+  @Get(':id/parent')
+  @Public()
+  @ApiOperation({ summary: 'Get parent organization (for branches)' })
+  findParent(@Param('id') id: string) {
+    return this.organization.findParent(id);
+  }
+
   @Get(':id')
   @Public()
-  @ApiOperation({ summary: 'Get organization by ID' })
+  @ApiOperation({ summary: 'Get organization by ID (includes parent and branches)' })
   findOne(@Param('id') id: string) {
     return this.organization.findById(id);
   }

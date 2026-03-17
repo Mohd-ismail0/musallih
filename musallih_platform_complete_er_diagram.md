@@ -69,6 +69,8 @@ It is organized into logical domains and followed by a unified ER diagram repres
 - description
 - geo_location (PostGIS)
 - authority_id (FK → Authority)
+- parent_organization_id (nullable FK → Organization, for branches)
+- branch_type (STANDALONE, HEADQUARTERS, BRANCH)
 - verification_status
 - primary_contact
 - created_at
@@ -292,6 +294,7 @@ erDiagram
 
     AUTHORITY ||--o{ AUTHORITY : governs
     AUTHORITY ||--o{ ORGANIZATION : approves
+    ORGANIZATION ||--o{ ORGANIZATION : has_branches
     AUTHORITY ||--o{ AUTHORITY_ADMIN : managed_by
 
     USER ||--o{ ORGANIZATION_TEAM : serves
@@ -330,6 +333,7 @@ erDiagram
 - All write operations must create audit logs.
 - All reads of protected data must reference ConsentProfile.
 - Organization is the root abstraction for masjids, madrasas, burial authorities, welfare orgs, and businesses.
+- Organization supports branches: parent_organization_id links a branch to its parent; branch_type is STANDALONE (default), HEADQUARTERS (has branches), or BRANCH.
 - Authority is a hierarchical self-referencing entity.
 
 ---

@@ -124,18 +124,23 @@ model AuthorityAdmin {
 }
 
 // ========== Organization Domain ==========
+// Branch type: STANDALONE (default), HEADQUARTERS (has branches), BRANCH (child of another org)
 model Organization {
-  id                 String   @id @default(uuid())
-  name               String
-  type               String   // MASJID, MADRASA, EDUCATION, BURIAL, WELFARE, BUSINESS, NGO
-  description        String?
-  geoLocation        String?  @map("geo_location") // PostGIS
-  authorityId        String   @map("authority_id")
-  verificationStatus String   @map("verification_status")
-  primaryContact     String?  @map("primary_contact")
-  createdAt          DateTime @default(now()) @map("created_at")
+  id                    String   @id @default(uuid())
+  name                  String
+  type                  String   // MASJID, MADRASA, EDUCATION, BURIAL, WELFARE, BUSINESS, NGO
+  description           String?
+  geoLocation           String?  @map("geo_location") // PostGIS
+  authorityId           String   @map("authority_id")
+  parentOrganizationId  String?  @map("parent_organization_id")
+  branchType            String   @default("STANDALONE") @map("branch_type") // STANDALONE, HEADQUARTERS, BRANCH
+  verificationStatus   String   @map("verification_status")
+  primaryContact        String?  @map("primary_contact")
+  createdAt             DateTime @default(now()) @map("created_at")
 
-  authority           Authority             @relation(fields: [authorityId], references: [id])
+  authority             Authority             @relation(fields: [authorityId], references: [id])
+  parentOrganization    Organization?         @relation("OrgBranches", fields: [parentOrganizationId], references: [id], onDelete: SetNull)
+  branches              Organization[]        @relation("OrgBranches")
   teams               OrganizationTeam[]
   schools             OrganizationSchool[]
   masjidPrayerConfig  MasjidPrayerConfig?
