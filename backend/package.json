@@ -30,9 +30,9 @@
     "contracts:validate": "node scripts/validate-contracts.js"
   },
   "dependencies": {
-    "@fastify/static": "^9.0.0",
     "@fastify/helmet": "^13.0.2",
     "@fastify/rate-limit": "^10.3.0",
+    "@fastify/static": "^9.0.0",
     "@nestjs/common": "^11.1.16",
     "@nestjs/config": "^4.0.3",
     "@nestjs/core": "^11.1.16",
