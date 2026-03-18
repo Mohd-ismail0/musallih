@@ -6,12 +6,14 @@ on:
     paths:
       - 'backend/**'
 
+# Required for pushing to GHCR - overrides repo default if restricted
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build-push:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     steps:
       - uses: actions/checkout@v4
 
@@ -19,7 +21,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
+          username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
@@ -28,5 +30,5 @@ jobs:
           context: ./backend
           push: true
           tags: |
-            ghcr.io/mohd-ismail0/musallih-backend:latest
-            ghcr.io/mohd-ismail0/musallih-backend:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/musallih-backend:latest
+            ghcr.io/${{ github.repository_owner }}/musallih-backend:${{ github.sha }}
