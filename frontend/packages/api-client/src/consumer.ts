@@ -7,6 +7,20 @@ export interface OrganizationSummary {
   type: string;
   lat?: number;
   lng?: number;
+  sect?: string;
+  openNow?: boolean;
+}
+
+export interface NearbyParams {
+  bbox?: string; // minLng,minLat,maxLng,maxLat
+  lat?: number;
+  lng?: number;
+  radiusKm?: number;
+  category?: string;
+  sect?: string[];
+  timing?: string[];
+  distanceBand?: string;
+  facilities?: string[];
 }
 
 export interface ServiceSummary {
@@ -54,14 +68,19 @@ export function createConsumerApi(options: ConsumerApiOptions = {}) {
   });
 
   return {
-    getNearbyOrganizations: (params: Record<string, string | number | boolean>) => {
-      const query = new URLSearchParams(
-        Object.entries(params).reduce<Record<string, string>>((acc, [key, value]) => {
-          acc[key] = String(value);
-          return acc;
-        }, {})
-      ).toString();
-      return api.get<OrganizationSummary[]>(`/organizations/nearby?${query}`);
+    getNearbyOrganizations: (params: NearbyParams) => {
+      const query = new URLSearchParams();
+      if (params.bbox != null) query.set("bbox", params.bbox);
+      if (params.lat != null) query.set("lat", String(params.lat));
+      if (params.lng != null) query.set("lng", String(params.lng));
+      if (params.radiusKm != null) query.set("radiusKm", String(params.radiusKm));
+      if (params.category != null) query.set("category", params.category);
+      if (params.sect?.length) query.set("sect", params.sect.join(","));
+      if (params.timing?.length) query.set("timing", params.timing.join(","));
+      if (params.distanceBand != null) query.set("distanceBand", params.distanceBand);
+      if (params.facilities?.length) query.set("facilities", params.facilities.join(","));
+      const qs = query.toString();
+      return api.get<OrganizationSummary[]>(`/organizations/nearby${qs ? `?${qs}` : ""}`);
     },
     getServices: () => api.get<ServiceSummary[]>("/services"),
     getActivities: () => api.get<ActivitySummary[]>("/activities"),

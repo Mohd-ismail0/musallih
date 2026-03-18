@@ -62,9 +62,11 @@ npm run dev:mobile    # Consumer mobile (Expo)
 
 ## API Configuration
 
-- **Web / Dashboard**: `VITE_API_URL` in `.env`
-- **Mobile**: `EXPO_PUBLIC_API_URL` in `.env` or app config
+- **Web / Dashboard**: `VITE_API_URL` in `.env` (see `apps/musallih/web/.env.example`)
+- **Mobile**: `EXPO_PUBLIC_API_URL` in `.env` (see `apps/musallih/mobile/.env.example`)
 - **Default**: `https://musallih-api.jollyocean-083299b2.southeastasia.azurecontainerapps.io/v1`
+
+For production deployment (builds, env vars, static host, EAS, CI), see **[DEPLOYMENT.md](./DEPLOYMENT.md)**.
 
 ## Auth
 

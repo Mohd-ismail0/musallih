@@ -1,11 +1,14 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageScaffold } from "@/components/layout/PageScaffold";
+import { MapView } from "@/components/map/MapView";
+import type { MapEntity, Bbox } from "@/components/map/MapView";
 import { useAuth } from "@/auth/AuthProvider";
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useEffect, useState, useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import { trackWebEvent } from "@/analytics/analytics";
 import { createConsumerApi } from "@musallih/api-client";
+import type { OrganizationSummary } from "@musallih/api-client";
 import { useQuery } from "@tanstack/react-query";
 import { API_BASE_URL } from "@/config/api";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -19,7 +22,7 @@ const mapCategories = [
   "Welfare",
   "Burial",
   "All",
-];
+] as const;
 
 const masjidSubFilters = {
   sect: [
@@ -37,17 +40,17 @@ const masjidSubFilters = {
   distance: ["1km", "3km", "5km", "10km", "Any"],
 };
 
-type MapEntity = {
+type MapCategory = (typeof mapCategories)[number];
+
+const sampleEntities: Array<{
   id: string;
   name: string;
-  category: (typeof mapCategories)[number];
+  category: MapCategory;
   lat: number;
   lng: number;
   sect?: string;
   openNow?: boolean;
-};
-
-const sampleEntities: MapEntity[] = [
+}> = [
   { id: "m1", name: "Masjid Noor", category: "Masjid", lat: 3.139, lng: 101.686, sect: "Shafi", openNow: true },
   { id: "m2", name: "Masjid Rahmah", category: "Masjid", lat: 3.144, lng: 101.694, sect: "Hanafi", openNow: true },
   { id: "m3", name: "Masjid Tawheed", category: "Masjid", lat: 3.147, lng: 101.691, sect: "General", openNow: false },
@@ -55,6 +58,33 @@ const sampleEntities: MapEntity[] = [
   { id: "b1", name: "Ummah Books", category: "Business", lat: 3.142, lng: 101.687, openNow: true },
   { id: "w1", name: "Mercy Welfare", category: "Welfare", lat: 3.141, lng: 101.692, openNow: true },
 ];
+
+function orgToMapEntity(o: OrganizationSummary): MapEntity | null {
+  if (o.lat == null || o.lng == null) return null;
+  return {
+    id: o.id,
+    name: o.name,
+    type: o.type,
+    lat: o.lat,
+    lng: o.lng,
+    sect: o.sect,
+    openNow: o.openNow,
+  };
+}
+
+function sampleToMapEntity(
+  e: (typeof sampleEntities)[number]
+): MapEntity {
+  return {
+    id: e.id,
+    name: e.name,
+    type: e.category === "Masjid" ? "MASJID" : e.category,
+    lat: e.lat,
+    lng: e.lng,
+    sect: e.sect,
+    openNow: e.openNow,
+  };
+}
 
 const consumerApi = createConsumerApi({
   baseUrl: API_BASE_URL,
@@ -169,26 +199,78 @@ export function SessionLoadingPage() {
 }
 
 export function MapPage() {
-  const activeCategory = "Masjid";
+  const [activeCategory, setActiveCategory] = useState<MapCategory>("Masjid");
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 200);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [bbox, setBbox] = useState<Bbox | null>(() => [
+    101.636, 3.089, 101.736, 3.189,
+  ] as Bbox);
+  const [sect, setSect] = useState<string[]>([]);
+  const [timing, setTiming] = useState<string[]>([]);
+  const [distanceBand, setDistanceBand] = useState<string | null>(null);
 
-  const filtered = sampleEntities.filter((entity) =>
-    activeCategory === "All" ? true : entity.category === activeCategory
-  ).filter((entity) =>
-    debouncedSearch ? entity.name.toLowerCase().includes(debouncedSearch.toLowerCase()) : true
+  const nearbyQuery = useQuery({
+    queryKey: [
+      "organizations",
+      "nearby",
+      bbox?.join(",") ?? "",
+      activeCategory,
+      sect.join(","),
+      timing.join(","),
+      distanceBand ?? "",
+    ],
+    queryFn: async () => {
+      const params: Parameters<typeof consumerApi.getNearbyOrganizations>[0] = {
+        category: activeCategory === "All" ? undefined : activeCategory,
+        sect: sect.length ? sect : undefined,
+        timing: timing.length ? timing : undefined,
+        distanceBand: distanceBand ?? undefined,
+      };
+      if (bbox) params.bbox = bbox.join(",");
+      return consumerApi.getNearbyOrganizations(params);
+    },
+    enabled: bbox != null,
+    staleTime: 60_000,
+    retry: 1,
+    gcTime: 10 * 60 * 1000,
+  });
+
+  const apiEntities = useMemo(() => {
+    if (nearbyQuery.data == null) return [];
+    return nearbyQuery.data.map(orgToMapEntity).filter((e): e is MapEntity => e != null);
+  }, [nearbyQuery.data]);
+
+  const fallbackEntities = useMemo(
+    () => sampleEntities.map(sampleToMapEntity),
+    []
   );
 
-  const clustered = filtered.reduce<Record<string, MapEntity[]>>((acc, entity) => {
-    const key = `${entity.lat.toFixed(2)}:${entity.lng.toFixed(2)}`;
-    acc[key] = acc[key] || [];
-    acc[key].push(entity);
-    return acc;
-  }, {});
+  const rawEntities = nearbyQuery.isError || nearbyQuery.data?.length === 0 ? fallbackEntities : apiEntities;
+
+  const filtered = useMemo(() => {
+    let list = rawEntities;
+    if (activeCategory !== "All") {
+      list = list.filter((e) => e.type?.toUpperCase() === activeCategory.toUpperCase().replace(/\s+/g, "_") || e.type === activeCategory);
+    }
+    if (debouncedSearch) {
+      list = list.filter((e) =>
+        e.name.toLowerCase().includes(debouncedSearch.toLowerCase())
+      );
+    }
+    return list;
+  }, [rawEntities, activeCategory, debouncedSearch]);
 
   useEffect(() => {
     trackWebEvent("map_home_viewed", { category: activeCategory });
   }, [activeCategory]);
+
+  const toggleSect = (value: string) => {
+    setSect((prev) => (prev.includes(value) ? prev.filter((s) => s !== value) : [...prev, value]));
+  };
+  const toggleTiming = (value: string) => {
+    setTiming((prev) => (prev.includes(value) ? prev.filter((t) => t !== value) : [...prev, value]));
+  };
 
   return (
     <PageScaffold
@@ -198,7 +280,12 @@ export function MapPage() {
       <div className="space-y-4">
         <div className="flex flex-wrap gap-2">
           {mapCategories.map((category) => (
-            <Badge key={category} variant={category === "Masjid" ? "default" : "outline"}>
+            <Badge
+              key={category}
+              variant={category === activeCategory ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() => setActiveCategory(category)}
+            >
               {category}
             </Badge>
           ))}
@@ -206,62 +293,90 @@ export function MapPage() {
         <div className="space-y-2 rounded-lg border border-border/60 bg-background/60 p-3">
           <input
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             placeholder="Search in current map scope..."
             className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm"
           />
-          <p className="text-sm font-medium">Masjid sub-filters</p>
-          <div className="flex flex-wrap gap-2">
-            {masjidSubFilters.sect.map((value) => (
-              <Badge key={value} variant="secondary">
-                Sect: {value}
-              </Badge>
-            ))}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {masjidSubFilters.timing.map((value) => (
-              <Badge key={value} variant="outline">
-                Timing: {value}
-              </Badge>
-            ))}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {masjidSubFilters.distance.map((value) => (
-              <Badge key={value} variant="outline">
-                Distance: {value}
-              </Badge>
-            ))}
-          </div>
-        </div>
-        <div className="h-[420px] rounded-xl border border-dashed border-border/70 bg-secondary/20 p-4 text-sm text-muted-foreground">
-          Map canvas placeholder. Cluster simulation:
-          <div className="mt-3 space-y-2">
-            {Object.entries(clustered).map(([key, entities]) => (
-              <div key={key} className="rounded-md border border-border/60 bg-background/60 p-2">
-                <p className="text-xs text-muted-foreground">Cluster {key}</p>
-                <p className="text-sm font-medium">{entities.length} marker(s)</p>
+          {activeCategory === "Masjid" && (
+            <>
+              <p className="text-sm font-medium">Masjid sub-filters</p>
+              <div className="flex flex-wrap gap-2">
+                {masjidSubFilters.sect.map((value) => (
+                  <Badge
+                    key={value}
+                    variant={sect.includes(value) ? "default" : "secondary"}
+                    className="cursor-pointer"
+                    onClick={() => toggleSect(value)}
+                  >
+                    {value}
+                  </Badge>
+                ))}
               </div>
-            ))}
-          </div>
+              <div className="flex flex-wrap gap-2">
+                {masjidSubFilters.timing.map((value) => (
+                  <Badge
+                    key={value}
+                    variant={timing.includes(value) ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() => toggleTiming(value)}
+                  >
+                    {value}
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {masjidSubFilters.distance.map((value) => (
+                  <Badge
+                    key={value}
+                    variant={distanceBand === value ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() => setDistanceBand(distanceBand === value ? null : value)}
+                  >
+                    {value}
+                  </Badge>
+                ))}
+              </div>
+            </>
+          )}
         </div>
+        <div className="h-[420px] min-h-[320px] w-full">
+          <MapView
+            entities={filtered}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            onBoundsChange={setBbox}
+          />
+        </div>
+        {nearbyQuery.isError && (
+          <p className="text-sm text-muted-foreground">
+            Using sample data. Backend /organizations/nearby will be used when available.
+          </p>
+        )}
         <div className="space-y-2">
-          <p className="text-sm font-medium">Entity info cards</p>
-          {filtered.map((entity) => (
-            <div key={entity.id} className="rounded-lg border border-border/60 bg-background/70 p-3">
+          <p className="text-sm font-medium">Entity list</p>
+          {filtered.slice(0, 8).map((entity) => (
+            <div
+              key={entity.id}
+              className="rounded-lg border border-border/60 bg-background/70 p-3"
+            >
               <p className="font-medium">{entity.name}</p>
               <p className="text-sm text-muted-foreground">
-                {entity.category} · {entity.sect ?? "N/A"} · {entity.openNow ? "Open" : "Closed"}
+                {entity.type ?? "—"} · {entity.sect ?? "N/A"} · {entity.openNow ? "Open" : "Closed"}
               </p>
               <div className="mt-2 flex gap-2">
-                <Button size="sm" variant="outline">
-                  View
+                <Button size="sm" variant="outline" asChild>
+                  <Link to={`/entities/${entity.id}`}>View</Link>
                 </Button>
-                <Button size="sm" variant="outline">
-                  Request
+                <Button size="sm" variant="outline" asChild>
+                  <Link to={`/requests/new?org=${entity.id}`}>Request</Link>
                 </Button>
-                <Button size="sm" variant="outline">
-                  Directions
-                </Button>
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${entity.lat},${entity.lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button size="sm" variant="outline">Directions</Button>
+                </a>
               </div>
             </div>
           ))}

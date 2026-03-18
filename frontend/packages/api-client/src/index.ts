@@ -8,6 +8,7 @@ export {
 export {
   createConsumerApi,
   type OrganizationSummary,
+  type NearbyParams,
   type ServiceSummary,
   type ActivitySummary,
   type PrayerTimesPayload,
