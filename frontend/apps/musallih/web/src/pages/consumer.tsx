@@ -1,0 +1,662 @@
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { PageScaffold } from "@/components/layout/PageScaffold";
+import { useAuth } from "@/auth/AuthProvider";
+import { type FormEvent, useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { trackWebEvent } from "@/analytics/analytics";
+import { createConsumerApi } from "@musallih/api-client";
+import { useQuery } from "@tanstack/react-query";
+import { API_BASE_URL } from "@/config/api";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+
+const mapCategories = [
+  "Masjid",
+  "Restaurants",
+  "Business",
+  "Madrasa",
+  "Islamic Orgs",
+  "Welfare",
+  "Burial",
+  "All",
+];
+
+const masjidSubFilters = {
+  sect: [
+    "General",
+    "Hanafi",
+    "Shafi",
+    "Maliki",
+    "Hanbali",
+    "Ahl-e-Hadith",
+    "Jafari",
+    "Zaydi",
+    "Ismaili",
+  ],
+  timing: ["OpenNow", "NextPrayerUnder30m", "IqamahUnder30m", "JumuahToday"],
+  distance: ["1km", "3km", "5km", "10km", "Any"],
+};
+
+type MapEntity = {
+  id: string;
+  name: string;
+  category: (typeof mapCategories)[number];
+  lat: number;
+  lng: number;
+  sect?: string;
+  openNow?: boolean;
+};
+
+const sampleEntities: MapEntity[] = [
+  { id: "m1", name: "Masjid Noor", category: "Masjid", lat: 3.139, lng: 101.686, sect: "Shafi", openNow: true },
+  { id: "m2", name: "Masjid Rahmah", category: "Masjid", lat: 3.144, lng: 101.694, sect: "Hanafi", openNow: true },
+  { id: "m3", name: "Masjid Tawheed", category: "Masjid", lat: 3.147, lng: 101.691, sect: "General", openNow: false },
+  { id: "r1", name: "Sunnah Eats", category: "Restaurants", lat: 3.143, lng: 101.688, openNow: true },
+  { id: "b1", name: "Ummah Books", category: "Business", lat: 3.142, lng: 101.687, openNow: true },
+  { id: "w1", name: "Mercy Welfare", category: "Welfare", lat: 3.141, lng: 101.692, openNow: true },
+];
+
+const consumerApi = createConsumerApi({
+  baseUrl: API_BASE_URL,
+  getToken: async () => localStorage.getItem("musallih_access_token"),
+});
+
+function PlaceholderBody({ label }: { label: string }) {
+  return (
+    <p className="text-sm text-muted-foreground">
+      {label} page scaffold is ready for feature implementation.
+    </p>
+  );
+}
+
+export function AuthLandingPage() {
+  const { status } = useAuth();
+  return (
+    <PageScaffold
+      title="Welcome to Musallih"
+      description="Choose sign in or sign up to continue."
+      actions={
+        <>
+          <Button asChild variant="outline">
+            <a href="/auth/sign-in">Sign In</a>
+          </Button>
+          <Button asChild>
+            <a href="/auth/sign-up">Sign Up</a>
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        <PlaceholderBody label="Auth landing" />
+        <p className="text-sm text-muted-foreground">Session status: {status}</p>
+      </div>
+    </PageScaffold>
+  );
+}
+
+export function SignInPage() {
+  const { signInWithEmail } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    try {
+      setError(null);
+      await signInWithEmail(email, password);
+    } catch (signInError) {
+      setError("Sign in failed. Verify credentials and Firebase config.");
+    }
+  };
+
+  return (
+    <PageScaffold title="Sign In" description="Authenticate with Firebase and continue.">
+      <form onSubmit={handleSubmit} className="space-y-3 max-w-md">
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm"
+          required
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm"
+          required
+        />
+        <div className="flex items-center gap-2">
+          <Button type="submit">Sign In</Button>
+          <Button type="button" variant="outline" asChild>
+            <Link to="/auth/sign-up">Create account</Link>
+          </Button>
+        </div>
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      </form>
+    </PageScaffold>
+  );
+}
+
+export function SignUpPage() {
+  return (
+    <PageScaffold title="Sign Up" description="Create your account with required PRD fields.">
+      <PlaceholderBody label="Sign up" />
+    </PageScaffold>
+  );
+}
+
+export function CompleteProfilePage() {
+  return (
+    <PageScaffold
+      title="Complete Profile"
+      description="Collect mandatory profile details after first sign in."
+    >
+      <PlaceholderBody label="Complete profile" />
+    </PageScaffold>
+  );
+}
+
+export function SessionLoadingPage() {
+  return (
+    <PageScaffold title="Restoring Session" description="Refreshing auth and rehydrating app state.">
+      <PlaceholderBody label="Session loading" />
+    </PageScaffold>
+  );
+}
+
+export function MapPage() {
+  const activeCategory = "Masjid";
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 200);
+
+  const filtered = sampleEntities.filter((entity) =>
+    activeCategory === "All" ? true : entity.category === activeCategory
+  ).filter((entity) =>
+    debouncedSearch ? entity.name.toLowerCase().includes(debouncedSearch.toLowerCase()) : true
+  );
+
+  const clustered = filtered.reduce<Record<string, MapEntity[]>>((acc, entity) => {
+    const key = `${entity.lat.toFixed(2)}:${entity.lng.toFixed(2)}`;
+    acc[key] = acc[key] || [];
+    acc[key].push(entity);
+    return acc;
+  }, {});
+
+  useEffect(() => {
+    trackWebEvent("map_home_viewed", { category: activeCategory });
+  }, [activeCategory]);
+
+  return (
+    <PageScaffold
+      title="Map"
+      description="Map-first home. Default category: Masjid with contextual sub-filters."
+    >
+      <div className="space-y-4">
+        <div className="flex flex-wrap gap-2">
+          {mapCategories.map((category) => (
+            <Badge key={category} variant={category === "Masjid" ? "default" : "outline"}>
+              {category}
+            </Badge>
+          ))}
+        </div>
+        <div className="space-y-2 rounded-lg border border-border/60 bg-background/60 p-3">
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search in current map scope..."
+            className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm"
+          />
+          <p className="text-sm font-medium">Masjid sub-filters</p>
+          <div className="flex flex-wrap gap-2">
+            {masjidSubFilters.sect.map((value) => (
+              <Badge key={value} variant="secondary">
+                Sect: {value}
+              </Badge>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {masjidSubFilters.timing.map((value) => (
+              <Badge key={value} variant="outline">
+                Timing: {value}
+              </Badge>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {masjidSubFilters.distance.map((value) => (
+              <Badge key={value} variant="outline">
+                Distance: {value}
+              </Badge>
+            ))}
+          </div>
+        </div>
+        <div className="h-[420px] rounded-xl border border-dashed border-border/70 bg-secondary/20 p-4 text-sm text-muted-foreground">
+          Map canvas placeholder. Cluster simulation:
+          <div className="mt-3 space-y-2">
+            {Object.entries(clustered).map(([key, entities]) => (
+              <div key={key} className="rounded-md border border-border/60 bg-background/60 p-2">
+                <p className="text-xs text-muted-foreground">Cluster {key}</p>
+                <p className="text-sm font-medium">{entities.length} marker(s)</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <p className="text-sm font-medium">Entity info cards</p>
+          {filtered.map((entity) => (
+            <div key={entity.id} className="rounded-lg border border-border/60 bg-background/70 p-3">
+              <p className="font-medium">{entity.name}</p>
+              <p className="text-sm text-muted-foreground">
+                {entity.category} · {entity.sect ?? "N/A"} · {entity.openNow ? "Open" : "Closed"}
+              </p>
+              <div className="mt-2 flex gap-2">
+                <Button size="sm" variant="outline">
+                  View
+                </Button>
+                <Button size="sm" variant="outline">
+                  Request
+                </Button>
+                <Button size="sm" variant="outline">
+                  Directions
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </PageScaffold>
+  );
+}
+
+export function EntityDetailPage() {
+  return (
+    <PageScaffold title="Entity Detail" description="Masjid/organization profile and quick actions.">
+      <PlaceholderBody label="Entity detail" />
+    </PageScaffold>
+  );
+}
+
+export function ServicesListPage() {
+  const servicesQuery = useQuery({
+    queryKey: ["services"],
+    queryFn: () => consumerApi.getServices(),
+  });
+
+  return (
+    <PageScaffold title="Services" description="Service discovery list filtered by map/category context.">
+      {servicesQuery.isLoading ? (
+        <p className="text-sm text-muted-foreground">Loading services...</p>
+      ) : servicesQuery.isError ? (
+        <p className="text-sm text-muted-foreground">
+          Services endpoint unavailable. UI scaffold remains ready.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {servicesQuery.data.map((service) => (
+            <div key={service.id} className="rounded-md border border-border/60 p-2">
+              <p className="font-medium">{service.name}</p>
+              <p className="text-xs text-muted-foreground">Org: {service.organizationId}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </PageScaffold>
+  );
+}
+
+export function ServiceDetailPage() {
+  return (
+    <PageScaffold title="Service Detail" description="Service details and request CTA.">
+      <PlaceholderBody label="Service detail" />
+    </PageScaffold>
+  );
+}
+
+export function ActivitiesListPage() {
+  const activitiesQuery = useQuery({
+    queryKey: ["activities"],
+    queryFn: () => consumerApi.getActivities(),
+  });
+
+  return (
+    <PageScaffold title="Activities" description="Upcoming events, classes, webinars, and drives.">
+      {activitiesQuery.isLoading ? (
+        <p className="text-sm text-muted-foreground">Loading activities...</p>
+      ) : activitiesQuery.isError ? (
+        <p className="text-sm text-muted-foreground">Activities API unavailable.</p>
+      ) : (
+        <div className="space-y-2">
+          {activitiesQuery.data.map((activity) => (
+            <div key={activity.id} className="rounded-md border border-border/60 p-2">
+              <p className="font-medium">{activity.title}</p>
+              <p className="text-xs text-muted-foreground">Org: {activity.organizationId}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </PageScaffold>
+  );
+}
+
+export function ActivityDetailPage() {
+  return (
+    <PageScaffold title="Activity Detail" description="Event details, registration, and replay access.">
+      <PlaceholderBody label="Activity detail" />
+    </PageScaffold>
+  );
+}
+
+export function PrayerDashboardPage() {
+  const prayerTimesQuery = useQuery({
+    queryKey: ["prayer-times"],
+    queryFn: () => consumerApi.getPrayerTimes(),
+  });
+
+  return (
+    <PageScaffold title="Prayer Dashboard" description="Prayer times, next prayer, and jamaat updates.">
+      {prayerTimesQuery.isLoading ? (
+        <p className="text-sm text-muted-foreground">Loading prayer times...</p>
+      ) : prayerTimesQuery.isError ? (
+        <p className="text-sm text-muted-foreground">Prayer endpoint unavailable.</p>
+      ) : (
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {Object.entries(prayerTimesQuery.data)
+            .filter(([key]) => key !== "date")
+            .map(([key, value]) => (
+              <div key={key} className="rounded-md border border-border/60 p-2">
+                <p className="text-xs uppercase text-muted-foreground">{key}</p>
+                <p className="font-medium">{String(value)}</p>
+              </div>
+            ))}
+        </div>
+      )}
+    </PageScaffold>
+  );
+}
+
+export function PrayerSettingsPage() {
+  return (
+    <PageScaffold
+      title="Prayer Settings"
+      description="Calculation methods, school of thought, and location preferences."
+    >
+      <PlaceholderBody label="Prayer settings" />
+    </PageScaffold>
+  );
+}
+
+export function HijriCalendarPage() {
+  const hijriQuery = useQuery({
+    queryKey: ["hijri-date"],
+    queryFn: () => consumerApi.getHijriDate(),
+  });
+
+  return (
+    <PageScaffold title="Hijri Calendar" description="Islamic dates, events, and authority overrides.">
+      {hijriQuery.isLoading ? (
+        <p className="text-sm text-muted-foreground">Loading Hijri calendar...</p>
+      ) : hijriQuery.isError ? (
+        <p className="text-sm text-muted-foreground">Hijri endpoint unavailable.</p>
+      ) : (
+        <div className="space-y-1">
+          <p className="text-sm">
+            Gregorian: <span className="font-medium">{hijriQuery.data.gregorianDate}</span>
+          </p>
+          <p className="text-sm">
+            Hijri: <span className="font-medium">{hijriQuery.data.hijriDate}</span>
+          </p>
+        </div>
+      )}
+    </PageScaffold>
+  );
+}
+
+export function RequestsListPage() {
+  const requestsQuery = useQuery({
+    queryKey: ["requests"],
+    queryFn: () => consumerApi.getRequests(),
+  });
+
+  return (
+    <PageScaffold title="Requests" description="Track all service requests and current status.">
+      {requestsQuery.isLoading ? (
+        <p className="text-sm text-muted-foreground">Loading requests...</p>
+      ) : requestsQuery.isError ? (
+        <p className="text-sm text-muted-foreground">Requests API unavailable.</p>
+      ) : (
+        <div className="space-y-2">
+          {requestsQuery.data.map((request) => (
+            <div key={request.id} className="rounded-md border border-border/60 p-2">
+              <p className="font-medium">{request.serviceType}</p>
+              <p className="text-xs text-muted-foreground">
+                {request.status} · Org {request.organizationId}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </PageScaffold>
+  );
+}
+
+export function RequestCreatePage() {
+  const [draft, setDraft] = useState(() => localStorage.getItem("request_draft") || "");
+
+  useEffect(() => {
+    localStorage.setItem("request_draft", draft);
+  }, [draft]);
+
+  return (
+    <PageScaffold title="Create Request" description="Submit a structured service request.">
+      <div className="space-y-3">
+        <textarea
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          className="min-h-32 w-full rounded-md border border-border/60 bg-background p-3 text-sm"
+          placeholder="Draft your request details..."
+        />
+        <p className="text-xs text-muted-foreground">
+          Draft is persisted locally for offline recovery.
+        </p>
+      </div>
+    </PageScaffold>
+  );
+}
+
+export function RequestAttachmentsPage() {
+  return (
+    <PageScaffold title="Request Attachments" description="Upload request documents and evidence files.">
+      <PlaceholderBody label="Request attachments" />
+    </PageScaffold>
+  );
+}
+
+export function RequestReviewSubmitPage() {
+  return (
+    <PageScaffold title="Review & Submit" description="Final review before request submission.">
+      <PlaceholderBody label="Request review submit" />
+    </PageScaffold>
+  );
+}
+
+export function RequestDetailPage() {
+  const { requestId = "" } = useParams<{ requestId: string }>();
+  const requestQuery = useQuery({
+    queryKey: ["request", requestId],
+    queryFn: () => consumerApi.getRequestById(requestId),
+    enabled: Boolean(requestId),
+  });
+
+  return (
+    <PageScaffold title="Request Detail" description="Status timeline and secure communications.">
+      {requestQuery.isLoading ? (
+        <p className="text-sm text-muted-foreground">Loading request details...</p>
+      ) : requestQuery.isError ? (
+        <p className="text-sm text-muted-foreground">Request detail API unavailable.</p>
+      ) : requestQuery.data ? (
+        <div className="space-y-1">
+          <p className="text-sm">
+            <span className="text-muted-foreground">Service:</span>{" "}
+            <span className="font-medium">{requestQuery.data.serviceType}</span>
+          </p>
+          <p className="text-sm">
+            <span className="text-muted-foreground">Status:</span>{" "}
+            <span className="font-medium">{requestQuery.data.status}</span>
+          </p>
+        </div>
+      ) : (
+        <PlaceholderBody label="Request detail" />
+      )}
+    </PageScaffold>
+  );
+}
+
+export function AppointmentSchedulerPage() {
+  return (
+    <PageScaffold title="Appointment Scheduler" description="Select available slots and confirm timing.">
+      <PlaceholderBody label="Appointment scheduler" />
+    </PageScaffold>
+  );
+}
+
+export function AnnouncementsFeedPage() {
+  return (
+    <PageScaffold title="Announcements" description="Organization and authority broadcasts.">
+      <PlaceholderBody label="Announcements feed" />
+    </PageScaffold>
+  );
+}
+
+export function AnnouncementDetailPage() {
+  return (
+    <PageScaffold title="Announcement Detail" description="Detailed announcement content and actions.">
+      <PlaceholderBody label="Announcement detail" />
+    </PageScaffold>
+  );
+}
+
+export function FamilyListPage() {
+  return (
+    <PageScaffold title="Family" description="Manage family groups and member profiles.">
+      <PlaceholderBody label="Family list" />
+    </PageScaffold>
+  );
+}
+
+export function FamilyDetailPage() {
+  return (
+    <PageScaffold title="Family Detail" description="Member details, roles, and relationships.">
+      <PlaceholderBody label="Family detail" />
+    </PageScaffold>
+  );
+}
+
+export function MemberConsentSettingsPage() {
+  return (
+    <PageScaffold title="Member Consent" description="Field-level consent controls per family member.">
+      <PlaceholderBody label="Member consent settings" />
+    </PageScaffold>
+  );
+}
+
+export function AccessHistoryPage() {
+  return (
+    <PageScaffold title="Access History" description="Audit trail of sensitive data access events.">
+      <PlaceholderBody label="Access history" />
+    </PageScaffold>
+  );
+}
+
+export function DataExportDeletePage() {
+  return (
+    <PageScaffold title="Data Rights" description="Export data and request account deletion.">
+      <PlaceholderBody label="Data export delete" />
+    </PageScaffold>
+  );
+}
+
+export function CampaignsListPage() {
+  return (
+    <PageScaffold title="Campaigns" description="Explore donation drives and community campaigns.">
+      <PlaceholderBody label="Campaigns list" />
+    </PageScaffold>
+  );
+}
+
+export function CampaignDetailPage() {
+  return (
+    <PageScaffold title="Campaign Detail" description="Campaign transparency and donation options.">
+      <PlaceholderBody label="Campaign detail" />
+    </PageScaffold>
+  );
+}
+
+export function DonateFlowPage() {
+  return (
+    <PageScaffold title="Donate" description="Complete donation and view confirmation.">
+      <PlaceholderBody label="Donate flow" />
+    </PageScaffold>
+  );
+}
+
+export function DonationHistoryPage() {
+  return (
+    <PageScaffold title="Donation History" description="Track your past contributions and receipts.">
+      <PlaceholderBody label="Donation history" />
+    </PageScaffold>
+  );
+}
+
+export function ProfilePage() {
+  return (
+    <PageScaffold title="Profile" description="Account profile and personal settings overview.">
+      <PlaceholderBody label="Profile" />
+    </PageScaffold>
+  );
+}
+
+export function EditProfilePage() {
+  return (
+    <PageScaffold title="Edit Profile" description="Update personal details and attributes.">
+      <PlaceholderBody label="Edit profile" />
+    </PageScaffold>
+  );
+}
+
+export function SchoolOfThoughtPage() {
+  return (
+    <PageScaffold
+      title="School of Thought"
+      description="Manage school of thought preferences used in app logic."
+    >
+      <PlaceholderBody label="School of thought" />
+    </PageScaffold>
+  );
+}
+
+export function NotificationSettingsPage() {
+  return (
+    <PageScaffold title="Notification Settings" description="Control alerts and broadcast preferences.">
+      <PlaceholderBody label="Notification settings" />
+    </PageScaffold>
+  );
+}
+
+export function LocationSettingsPage() {
+  return (
+    <PageScaffold title="Location Settings" description="Manage location permissions and defaults.">
+      <PlaceholderBody label="Location settings" />
+    </PageScaffold>
+  );
+}
+
+export function AccountSecurityPage() {
+  return (
+    <PageScaffold title="Account Security" description="Manage login providers and security controls.">
+      <PlaceholderBody label="Account security" />
+    </PageScaffold>
+  );
+}
