@@ -2,10 +2,9 @@ name: Build and Push to GHCR
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
     paths:
       - 'backend/**'
-  workflow_dispatch:
 
 jobs:
   build-push:
@@ -31,5 +30,3 @@ jobs:
           tags: |
             ghcr.io/mohd-ismail0/musallih-backend:latest
             ghcr.io/mohd-ismail0/musallih-backend:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max

@@ -3,10 +3,11 @@ dist
 .env
 .env.*
 !.env.example
-*.log
 .git
 .gitignore
-README.md
+*.md
+*.log
 coverage
 .nyc_output
-*.md
+*.test.ts
+*.spec.ts
