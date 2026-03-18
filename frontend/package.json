@@ -4,15 +4,17 @@
   "version": "0.1.0",
   "type": "module",
   "workspaces": [
-    "apps/*",
+    "apps/musallih/web",
+    "apps/musallih/mobile",
+    "apps/dashboard",
     "packages/*"
   ],
   "scripts": {
-    "dev:landing": "npm run dev -w musallih-landing",
+    "dev:web": "npm run dev -w musallih-web",
     "dev:dashboard": "npm run dev -w musallih-dashboard",
     "dev:mobile": "npm run start -w musallih-mobile",
-    "build:landing": "npm run build -w musallih-landing",
+    "build:web": "npm run build -w musallih-web",
     "build:dashboard": "npm run build -w musallih-dashboard",
-    "build": "npm run build:landing && npm run build:dashboard"
+    "build": "npm run build:web && npm run build:dashboard"
   }
 }

@@ -7,7 +7,7 @@ import {
   Footer,
 } from "@/components/landing";
 
-export function Index() {
+export function HomePage() {
   return (
     <main className="min-h-screen bg-background overflow-x-hidden">
       <HeroSection />
