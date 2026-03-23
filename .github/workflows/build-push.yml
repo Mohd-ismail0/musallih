@@ -11,17 +11,25 @@ permissions:
   contents: read
   packages: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build-push:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
+      - name: Normalize image owner
+        id: image_owner
+        shell: bash
+        run: echo "value=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.repository_owner }}
+          username: ${{ steps.image_owner.outputs.value }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
@@ -30,5 +38,5 @@ jobs:
           context: ./backend
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/musallih-backend:latest
-            ghcr.io/${{ github.repository_owner }}/musallih-backend:${{ github.sha }}
+            ghcr.io/${{ steps.image_owner.outputs.value }}/musallih-backend:latest
+            ghcr.io/${{ steps.image_owner.outputs.value }}/musallih-backend:${{ github.sha }}
