@@ -73,7 +73,7 @@ export function MapView({
         onLoad={handleMoveEnd}
         mapStyle="https://demotiles.maplibre.org/styles/osm-bright/style.json"
         style={{ width: "100%", height: "100%" }}
-        mapLibreOptions={{ attributionControl: true }}
+        attributionControl
       >
         <NavigationControl position="top-right" showCompass showZoom />
         <FullscreenControl position="top-right" />

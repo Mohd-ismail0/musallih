@@ -20,9 +20,11 @@ export default function AuthLandingScreen() {
             variant="outline"
           />
         </View>
-        <Link href="/(tabs)/map" asChild>
-          <Text style={styles.devLink}>Continue to App (development)</Text>
-        </Link>
+        {__DEV__ ? (
+          <Link href="/(tabs)/map" asChild>
+            <Text style={styles.devLink}>Continue to App (development)</Text>
+          </Link>
+        ) : null}
         <Text style={styles.sessionStatus}>Session status: {status}</Text>
       </SectionCard>
     </ScreenScaffold>

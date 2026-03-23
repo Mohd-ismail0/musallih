@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Outlet, NavLink, Link, useLocation } from "react-router-dom";
+import { Outlet, NavLink, Link, useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Building2, Shield, Menu, X } from "lucide-react";
-import { cn, getNavItemClass } from "@musallih/shared";
+import { cn, focusRingClass, getNavItemClass, interactiveBaseClass } from "@musallih/shared";
 
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Overview" },
@@ -12,10 +12,26 @@ const navItems = [
 export function DashboardLayout() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { pathname } = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     setIsMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsMenuOpen(false);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  function handleSignOut() {
+    window.localStorage.removeItem("musallih.dashboard.auth");
+    navigate("/login", { replace: true });
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -28,8 +44,14 @@ export function DashboardLayout() {
           <button
             type="button"
             onClick={() => setIsMenuOpen((open) => !open)}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:text-foreground lg:hidden"
+            className={cn(
+              interactiveBaseClass,
+              focusRingClass,
+              "inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card text-muted-foreground hover:text-foreground lg:hidden"
+            )}
             aria-label="Toggle navigation menu"
+            aria-expanded={isMenuOpen}
+            aria-controls="dashboard-primary-nav"
           >
             {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -38,6 +60,17 @@ export function DashboardLayout() {
               Role aware
             </span>
             <span>Admin and authority workspace</span>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className={cn(
+                interactiveBaseClass,
+                focusRingClass,
+                "rounded-md border border-border bg-card px-3 py-1.5 text-xs text-foreground hover:bg-secondary"
+              )}
+            >
+              Sign out
+            </button>
           </div>
         </div>
       </header>
@@ -49,7 +82,7 @@ export function DashboardLayout() {
             isMenuOpen ? "block" : "hidden lg:block"
           )}
         >
-          <nav className="space-y-1 p-3 sm:p-4">
+          <nav id="dashboard-primary-nav" className="space-y-1 p-3 sm:p-4" aria-label="Dashboard navigation">
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
@@ -66,6 +99,17 @@ export function DashboardLayout() {
                 {item.label}
               </NavLink>
             ))}
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className={cn(
+                interactiveBaseClass,
+                focusRingClass,
+                "mt-3 w-full justify-start rounded-lg border border-border px-3 py-2 text-sm text-foreground hover:bg-secondary lg:hidden"
+              )}
+            >
+              Sign out
+            </button>
           </nav>
         </aside>
 

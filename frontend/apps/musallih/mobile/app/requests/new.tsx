@@ -36,6 +36,7 @@ export default function CreateRequestScreen() {
           placeholderTextColor={theme.colors.mutedForeground}
           multiline
           style={styles.input}
+          accessibilityLabel="Request draft details"
         />
         <Text style={styles.note}>
           Draft is persisted locally for offline recovery.

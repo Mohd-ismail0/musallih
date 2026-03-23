@@ -110,10 +110,7 @@ export default function MapTabScreen() {
 
   const fallbackEntities = useMemo(() => sampleEntities.map(sampleToMapEntity), []);
 
-  const entities =
-    nearbyQuery.isSuccess && (nearbyQuery.data?.length ?? 0) > 0
-      ? apiEntities
-      : fallbackEntities;
+  const entities = nearbyQuery.isError ? fallbackEntities : apiEntities;
 
   const filtered = useMemo(() => {
     if (activeCategory === "All") return entities;
@@ -150,6 +147,9 @@ export default function MapTabScreen() {
                 key={label}
                 onPress={() => setActiveCategory(label)}
                 style={[styles.chip, label === activeCategory && styles.activeChip]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: label === activeCategory }}
+                hitSlop={8}
               >
                 <Text style={[styles.chipText, label === activeCategory && styles.activeChipText]}>
                   {label}
@@ -168,6 +168,9 @@ export default function MapTabScreen() {
                   key={label}
                   onPress={() => toggleSect(label)}
                   style={[styles.chip, sect.includes(label) && styles.activeChip]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: sect.includes(label) }}
+                  hitSlop={8}
                 >
                   <Text
                     style={[styles.chipText, sect.includes(label) && styles.activeChipText]}
@@ -180,15 +183,29 @@ export default function MapTabScreen() {
           </SectionCard>
         )}
 
-        <View style={styles.mapContainer}>
-          <MobileMapView
-            entities={filtered}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-            onBoundsChange={setBbox}
-            style={styles.map}
+        {nearbyQuery.isLoading ? (
+          <StateBlock
+            state="loading"
+            title="Loading nearby organizations"
+            description="Fetching map entities for the selected filters."
           />
-        </View>
+        ) : filtered.length === 0 ? (
+          <StateBlock
+            state="empty"
+            title="No entities found"
+            description="Try expanding the map area or adjusting filters."
+          />
+        ) : (
+          <View style={styles.mapContainer}>
+            <MobileMapView
+              entities={filtered}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              onBoundsChange={setBbox}
+              style={styles.map}
+            />
+          </View>
+        )}
 
         {selectedEntity ? (
           <SectionCard title={selectedEntity.name} subtitle="Selected location">
@@ -244,6 +261,8 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.full,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
+    minHeight: 44,
+    justifyContent: "center",
   },
   activeChip: {
     backgroundColor: theme.colors.accent,

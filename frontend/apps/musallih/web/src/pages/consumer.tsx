@@ -124,10 +124,10 @@ export function AuthLandingPage() {
       actions={
         <>
           <Button asChild variant="outline">
-            <a href="/auth">Sign In</a>
+            <Link to="/auth">Sign In</Link>
           </Button>
           <Button asChild>
-            <a href="/auth">Sign Up</a>
+            <Link to="/auth">Sign Up</Link>
           </Button>
         </>
       }
@@ -284,7 +284,7 @@ export function MapPage() {
     []
   );
 
-  const rawEntities = nearbyQuery.isError || nearbyQuery.data?.length === 0 ? fallbackEntities : apiEntities;
+  const rawEntities = nearbyQuery.isError ? fallbackEntities : apiEntities;
 
   const filtered = useMemo(() => {
     let list = rawEntities;
@@ -323,14 +323,16 @@ export function MapPage() {
         />
         <div className="flex flex-wrap gap-2">
           {mapCategories.map((category) => (
-            <Badge
+            <Button
               key={category}
+              type="button"
               variant={category === activeCategory ? "default" : "outline"}
-              className="cursor-pointer px-3 py-1"
+              size="sm"
+              aria-pressed={category === activeCategory}
               onClick={() => setActiveCategory(category)}
             >
               {category}
-            </Badge>
+            </Button>
           ))}
         </div>
         <SurfaceCard className="space-y-3">
@@ -345,38 +347,44 @@ export function MapPage() {
               <p className="text-sm font-medium">Masjid sub-filters</p>
               <div className="flex flex-wrap gap-2">
                 {masjidSubFilters.sect.map((value) => (
-                  <Badge
+                  <Button
                     key={value}
                     variant={sect.includes(value) ? "default" : "secondary"}
-                    className="cursor-pointer"
+                    size="sm"
+                    type="button"
+                    aria-pressed={sect.includes(value)}
                     onClick={() => toggleSect(value)}
                   >
                     {value}
-                  </Badge>
+                  </Button>
                 ))}
               </div>
               <div className="flex flex-wrap gap-2">
                 {masjidSubFilters.timing.map((value) => (
-                  <Badge
+                  <Button
                     key={value}
                     variant={timing.includes(value) ? "default" : "outline"}
-                    className="cursor-pointer"
+                    size="sm"
+                    type="button"
+                    aria-pressed={timing.includes(value)}
                     onClick={() => toggleTiming(value)}
                   >
                     {value}
-                  </Badge>
+                  </Button>
                 ))}
               </div>
               <div className="flex flex-wrap gap-2">
                 {masjidSubFilters.distance.map((value) => (
-                  <Badge
+                  <Button
                     key={value}
                     variant={distanceBand === value ? "default" : "outline"}
-                    className="cursor-pointer"
+                    size="sm"
+                    type="button"
+                    aria-pressed={distanceBand === value}
                     onClick={() => setDistanceBand(distanceBand === value ? null : value)}
                   >
                     {value}
-                  </Badge>
+                  </Button>
                 ))}
               </div>
             </>
@@ -415,13 +423,15 @@ export function MapPage() {
                     <Button size="sm" variant="outline" asChild>
                       <Link to={`/requests/new?org=${entity.id}`}>Request</Link>
                     </Button>
-                    <a
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${entity.lat},${entity.lng}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Button size="sm" variant="outline">Directions</Button>
-                    </a>
+                    <Button size="sm" variant="outline" asChild>
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${entity.lat},${entity.lng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Directions
+                      </a>
+                    </Button>
                   </div>
                 </SurfaceCard>
               ))
@@ -635,7 +645,11 @@ export function RequestCreatePage() {
   return (
     <PageScaffold title="Create Request" description="Submit a structured service request.">
       <div className="space-y-3">
+        <label htmlFor="request-draft" className="text-sm font-medium">
+          Request details
+        </label>
         <textarea
+          id="request-draft"
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           className="min-h-32 w-full rounded-md border border-border/60 bg-background p-3 text-sm"

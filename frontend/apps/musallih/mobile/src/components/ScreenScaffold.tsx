@@ -14,7 +14,7 @@ export function ScreenScaffold({
   children,
 }: ScreenScaffoldProps) {
   return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <View style={styles.inner}>
         <View style={styles.header}>
           <Text style={styles.title}>{title}</Text>

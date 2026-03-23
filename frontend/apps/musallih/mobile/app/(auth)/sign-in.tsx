@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { Button } from "../../src/components/Button";
 import { ScreenScaffold } from "../../src/components/ScreenScaffold";
@@ -31,7 +31,7 @@ export default function SignInScreen() {
       title="Sign In"
       description="Use email/password now. Google, Apple, and phone OTP can be linked from web security settings."
     >
-      <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Email + Password</Text>
           <TextInput
@@ -41,6 +41,11 @@ export default function SignInScreen() {
             onChangeText={setEmail}
             style={styles.input}
             autoCapitalize="none"
+            keyboardType="email-address"
+            textContentType="emailAddress"
+            autoComplete="email"
+            autoCorrect={false}
+            accessibilityLabel="Email"
           />
           <TextInput
             placeholder="Password"
@@ -49,6 +54,9 @@ export default function SignInScreen() {
             onChangeText={setPassword}
             style={styles.input}
             secureTextEntry
+            textContentType="password"
+            autoComplete="password"
+            accessibilityLabel="Password"
           />
           <Button title={busy ? "Signing In..." : "Sign In"} onPress={handleSignIn} disabled={busy} />
         </View>
@@ -60,7 +68,7 @@ export default function SignInScreen() {
           <Button title="Phone OTP (link on web)" onPress={() => {}} disabled variant="outline" />
         </View>
         {error ? <Text style={styles.error}>{error}</Text> : null}
-      </View>
+      </ScrollView>
     </ScreenScaffold>
   );
 }
@@ -68,6 +76,7 @@ export default function SignInScreen() {
 const styles = StyleSheet.create({
   container: {
     gap: theme.spacing.md,
+    paddingBottom: theme.spacing.xl,
   },
   card: {
     gap: theme.spacing.sm,

@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom";
+import { useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   cn,
   elevatedCardSurfaceClass,
@@ -7,6 +8,22 @@ import {
 } from "@musallih/shared";
 
 export function LoginPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from ?? "/";
+
+  useEffect(() => {
+    const isAuthed = window.localStorage.getItem("musallih.dashboard.auth") === "true";
+    if (isAuthed) {
+      navigate("/", { replace: true });
+    }
+  }, [navigate]);
+
+  function handleContinue() {
+    window.localStorage.setItem("musallih.dashboard.auth", "true");
+    navigate(from, { replace: true });
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className={cn("w-full max-w-sm rounded-2xl p-8", elevatedCardSurfaceClass)}>
@@ -17,8 +34,9 @@ export function LoginPage() {
         <p className="text-sm text-muted-foreground mb-4">
           Firebase Auth integration coming soon.
         </p>
-        <Link
-          to="/"
+        <button
+          type="button"
+          onClick={handleContinue}
           className={cn(
             interactiveBaseClass,
             focusRingClass,
@@ -28,7 +46,7 @@ export function LoginPage() {
           )}
         >
           Continue to Dashboard (placeholder)
-        </Link>
+        </button>
       </div>
     </div>
   );

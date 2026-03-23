@@ -8,9 +8,11 @@ interface StateBlockProps {
   icon: ReactNode;
   className?: string;
   action?: ReactNode;
+  role?: "status" | "alert";
+  live?: "polite" | "assertive";
 }
 
-function StateBlock({ title, description, icon, className, action }: StateBlockProps) {
+function StateBlock({ title, description, icon, className, action, role, live }: StateBlockProps) {
   return (
     <div
       className={cn(
@@ -18,6 +20,8 @@ function StateBlock({ title, description, icon, className, action }: StateBlockP
         "flex min-h-40 flex-col items-center justify-center gap-3",
         className
       )}
+      role={role}
+      aria-live={live}
     >
       <div className="text-muted-foreground">{icon}</div>
       <div className="space-y-1">
@@ -41,6 +45,8 @@ export function LoadingState({
       title={title}
       description={description}
       icon={<Loader2 className="h-5 w-5 animate-spin" />}
+      role="status"
+      live="polite"
     />
   );
 }
@@ -60,6 +66,8 @@ export function ErrorState({
       description={description}
       icon={<AlertTriangle className="h-5 w-5 text-destructive" />}
       action={action}
+      role="alert"
+      live="assertive"
     />
   );
 }

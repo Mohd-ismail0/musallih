@@ -60,6 +60,9 @@ export function MobileAuthProvider({ children }: { children: ReactNode }) {
         setStatus("authenticated");
       } catch (error) {
         console.error("Mobile token exchange failed", error);
+        await firebaseSignOut(mobileFirebaseAuth);
+        setUser(null);
+        setAccessToken(null);
         setStatus("signed_out");
       }
     });

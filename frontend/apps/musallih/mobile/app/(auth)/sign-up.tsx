@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Text, TextInput, View, StyleSheet } from "react-native";
+import { Text, TextInput, View, StyleSheet, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { Button } from "../../src/components/Button";
 import { ScreenScaffold } from "../../src/components/ScreenScaffold";
@@ -36,7 +36,7 @@ export default function SignUpScreen() {
       title="Create Account"
       description="Create with email/password. Link Google, Apple, and phone from web security."
     >
-      <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Email + Password</Text>
           <TextInput
@@ -46,6 +46,11 @@ export default function SignUpScreen() {
             onChangeText={setEmail}
             style={styles.input}
             autoCapitalize="none"
+            keyboardType="email-address"
+            textContentType="emailAddress"
+            autoComplete="email"
+            autoCorrect={false}
+            accessibilityLabel="Email"
           />
           <TextInput
             placeholder="Password"
@@ -54,6 +59,9 @@ export default function SignUpScreen() {
             onChangeText={setPassword}
             style={styles.input}
             secureTextEntry
+            textContentType="newPassword"
+            autoComplete="password-new"
+            accessibilityLabel="Password"
           />
           <TextInput
             placeholder="Confirm password"
@@ -62,11 +70,14 @@ export default function SignUpScreen() {
             onChangeText={setConfirmPassword}
             style={styles.input}
             secureTextEntry
+            textContentType="newPassword"
+            autoComplete="password-new"
+            accessibilityLabel="Confirm password"
           />
           <Button title={busy ? "Creating..." : "Create Account"} onPress={handleSignUp} disabled={busy} />
         </View>
         {error ? <Text style={styles.error}>{error}</Text> : null}
-      </View>
+      </ScrollView>
     </ScreenScaffold>
   );
 }
@@ -74,6 +85,7 @@ export default function SignUpScreen() {
 const styles = StyleSheet.create({
   container: {
     gap: theme.spacing.md,
+    paddingBottom: theme.spacing.xl,
   },
   card: {
     gap: theme.spacing.sm,

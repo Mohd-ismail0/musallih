@@ -1,4 +1,5 @@
 import { Building2, Plus, Search } from "lucide-react";
+import { cn, focusRingClass, interactiveBaseClass } from "@musallih/shared";
 import { StatePanel } from "@/components/ui/StatePanel";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 
@@ -20,7 +21,11 @@ export function OrganizationsPage() {
         </div>
         <button
           type="button"
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90"
+          className={cn(
+            interactiveBaseClass,
+            focusRingClass,
+            "inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
+          )}
         >
           <Plus className="h-4 w-4" />
           New organization
@@ -30,10 +35,14 @@ export function OrganizationsPage() {
       <section className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <label className="relative block w-full sm:max-w-sm">
+            <span className="sr-only">Search organizations</span>
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               placeholder="Search organizations"
-              className="h-10 w-full rounded-lg border border-input bg-background pl-9 pr-3 text-sm outline-none ring-offset-background transition focus-visible:ring-2 focus-visible:ring-ring"
+              className={cn(
+                focusRingClass,
+                "h-10 w-full rounded-lg border border-input bg-background pl-9 pr-3 text-sm outline-none ring-offset-background transition"
+              )}
             />
           </label>
           <StatusBadge label="Scope: Admin + Org users" />
@@ -41,13 +50,14 @@ export function OrganizationsPage() {
 
         <div className="mt-4 overflow-x-auto">
           <table className="min-w-full text-left text-sm">
+            <caption className="sr-only">Organization list with city, owner, service count, and status</caption>
             <thead className="text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="px-0 py-2">Name</th>
-                <th className="px-0 py-2">City</th>
-                <th className="px-0 py-2">Owner</th>
-                <th className="px-0 py-2">Services</th>
-                <th className="px-0 py-2">Status</th>
+                <th scope="col" className="px-0 py-2">Name</th>
+                <th scope="col" className="px-0 py-2">City</th>
+                <th scope="col" className="px-0 py-2">Owner</th>
+                <th scope="col" className="px-0 py-2">Services</th>
+                <th scope="col" className="px-0 py-2">Status</th>
               </tr>
             </thead>
             <tbody>

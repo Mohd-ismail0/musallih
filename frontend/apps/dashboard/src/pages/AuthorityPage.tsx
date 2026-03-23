@@ -62,12 +62,13 @@ export function AuthorityPage() {
 
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
+            <caption className="sr-only">Authority request queue with reference, type, organization, and priority</caption>
             <thead className="text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="px-0 py-2">Reference</th>
-                <th className="px-0 py-2">Type</th>
-                <th className="px-0 py-2">Organization</th>
-                <th className="px-0 py-2">Priority</th>
+                <th scope="col" className="px-0 py-2">Reference</th>
+                <th scope="col" className="px-0 py-2">Type</th>
+                <th scope="col" className="px-0 py-2">Organization</th>
+                <th scope="col" className="px-0 py-2">Priority</th>
               </tr>
             </thead>
             <tbody>

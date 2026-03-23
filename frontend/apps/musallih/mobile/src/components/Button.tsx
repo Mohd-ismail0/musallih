@@ -34,6 +34,9 @@ export function Button({
       disabled={disabled}
       style={[styles.base, variantStyles.container, disabled && styles.disabled, style]}
       activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      accessibilityLabel={title}
     >
       <Text style={[styles.text, variantStyles.text, textStyle]}>{title}</Text>
     </TouchableOpacity>
@@ -70,6 +73,7 @@ const styles = StyleSheet.create({
   base: {
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
+    minHeight: 44,
     borderRadius: theme.radius.md,
     alignItems: "center",
     justifyContent: "center",

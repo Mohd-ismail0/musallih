@@ -65,12 +65,13 @@ export function DashboardHome() {
 
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
+              <caption className="sr-only">Recent dashboard activity by reference, event, actor, and status</caption>
               <thead className="text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
-                  <th className="px-0 py-2">Reference</th>
-                  <th className="px-0 py-2">Event</th>
-                  <th className="px-0 py-2">Actor</th>
-                  <th className="px-0 py-2">Status</th>
+                  <th scope="col" className="px-0 py-2">Reference</th>
+                  <th scope="col" className="px-0 py-2">Event</th>
+                  <th scope="col" className="px-0 py-2">Actor</th>
+                  <th scope="col" className="px-0 py-2">Status</th>
                 </tr>
               </thead>
               <tbody>
