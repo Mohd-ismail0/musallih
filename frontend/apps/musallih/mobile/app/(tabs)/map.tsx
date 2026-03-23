@@ -4,6 +4,7 @@ import { ScreenScaffold } from "../../src/components/ScreenScaffold";
 import { MobileMapView } from "../../src/components/MobileMapView";
 import type { MapEntity, Bbox } from "../../src/components/MobileMapView";
 import { theme } from "../../src/theme/theme";
+import { SectionCard, StateBlock } from "../../src/components/AppUI";
 import { trackMobileEvent } from "../../src/analytics/mobileAnalytics";
 import { createConsumerApi } from "@musallih/api-client";
 import type { OrganizationSummary } from "@musallih/api-client";
@@ -123,6 +124,11 @@ export default function MapTabScreen() {
     );
   }, [entities, activeCategory]);
 
+  const selectedEntity = useMemo(
+    () => filtered.find((item) => item.id === selectedId) ?? null,
+    [filtered, selectedId]
+  );
+
   useEffect(() => {
     void trackMobileEvent("map_home_viewed", { category: activeCategory });
   }, [activeCategory]);
@@ -137,22 +143,24 @@ export default function MapTabScreen() {
       description="Default Masjid category with contextual sub-filters."
     >
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.chipsRow}>
-          {categories.map((label) => (
-            <Pressable
-              key={label}
-              onPress={() => setActiveCategory(label)}
-              style={[styles.chip, label === activeCategory && styles.activeChip]}
-            >
-              <Text style={[styles.chipText, label === activeCategory && styles.activeChipText]}>
-                {label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+        <SectionCard title="Category filters" subtitle="Select what appears on the map.">
+          <View style={styles.chipsRow}>
+            {categories.map((label) => (
+              <Pressable
+                key={label}
+                onPress={() => setActiveCategory(label)}
+                style={[styles.chip, label === activeCategory && styles.activeChip]}
+              >
+                <Text style={[styles.chipText, label === activeCategory && styles.activeChipText]}>
+                  {label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </SectionCard>
 
         {activeCategory === "Masjid" && (
-          <View style={styles.section}>
+          <SectionCard title="Masjid sub-filters">
             <Text style={styles.sectionTitle}>Masjid sub-filters</Text>
             <View style={styles.chipsRow}>
               {sectFilters.map((label) => (
@@ -169,7 +177,7 @@ export default function MapTabScreen() {
                 </Pressable>
               ))}
             </View>
-          </View>
+          </SectionCard>
         )}
 
         <View style={styles.mapContainer}>
@@ -182,10 +190,29 @@ export default function MapTabScreen() {
           />
         </View>
 
+        {selectedEntity ? (
+          <SectionCard title={selectedEntity.name} subtitle="Selected location">
+            <Text style={styles.selectedMeta}>
+              {selectedEntity.type ?? "Unknown"} {selectedEntity.sect ? `- ${selectedEntity.sect}` : ""}
+            </Text>
+            <Text style={styles.selectedMeta}>
+              {selectedEntity.openNow == null
+                ? "Opening hours not available"
+                : selectedEntity.openNow
+                  ? "Open now"
+                  : "Closed now"}
+            </Text>
+          </SectionCard>
+        ) : null}
+
         {nearbyQuery.isError && (
-          <Text style={styles.fallbackNote}>
-            Using sample data. Backend /organizations/nearby will be used when available.
-          </Text>
+          <StateBlock
+            state="error"
+            title="Showing fallback data"
+            description="Nearby API is unavailable, so sample entities are displayed."
+            actionLabel="Retry"
+            onAction={() => void nearbyQuery.refetch()}
+          />
         )}
       </ScrollView>
     </ScreenScaffold>
@@ -232,14 +259,17 @@ const styles = StyleSheet.create({
   },
   mapContainer: {
     minHeight: 360,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
     borderRadius: theme.radius.lg,
     overflow: "hidden",
   },
   map: {
     minHeight: 360,
   },
-  fallbackNote: {
-    fontSize: 12,
+  selectedMeta: {
+    fontSize: 13,
     color: theme.colors.mutedForeground,
     fontFamily: theme.fonts.sans,
   },

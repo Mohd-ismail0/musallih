@@ -1,7 +1,6 @@
 import { useLocalSearchParams } from "expo-router";
-import { Text } from "react-native";
+import { ListItemCard, SectionCard } from "../../src/components/AppUI";
 import { ScreenScaffold } from "../../src/components/ScreenScaffold";
-import { theme } from "../../src/theme/theme";
 
 export default function EntityDetailScreen() {
   const { entityId } = useLocalSearchParams<{ entityId: string }>();
@@ -11,9 +10,10 @@ export default function EntityDetailScreen() {
       title="Entity Detail"
       description="Organization profile, services, and map-linked actions."
     >
-      <Text style={{ color: theme.colors.mutedForeground, fontFamily: theme.fonts.sans }}>
-        Entity ID: {entityId}
-      </Text>
+      <SectionCard title="Organization snapshot">
+        <ListItemCard title="Entity ID" subtitle={entityId ?? "Unknown"} />
+        <ListItemCard title="Availability" subtitle="Use map to inspect live data." />
+      </SectionCard>
     </ScreenScaffold>
   );
 }

@@ -1,7 +1,6 @@
 import { useLocalSearchParams } from "expo-router";
-import { Text } from "react-native";
+import { ListItemCard, SectionCard } from "../../src/components/AppUI";
 import { ScreenScaffold } from "../../src/components/ScreenScaffold";
-import { theme } from "../../src/theme/theme";
 
 export default function AnnouncementDetailScreen() {
   const { announcementId } = useLocalSearchParams<{ announcementId: string }>();
@@ -11,9 +10,9 @@ export default function AnnouncementDetailScreen() {
       title="Announcement Detail"
       description="Authority and organization announcement details."
     >
-      <Text style={{ color: theme.colors.mutedForeground, fontFamily: theme.fonts.sans }}>
-        Announcement ID: {announcementId}
-      </Text>
+      <SectionCard title="Announcement details">
+        <ListItemCard title="Announcement ID" subtitle={announcementId ?? "Unknown"} />
+      </SectionCard>
     </ScreenScaffold>
   );
 }

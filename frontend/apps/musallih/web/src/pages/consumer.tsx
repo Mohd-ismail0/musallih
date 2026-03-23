@@ -13,6 +13,9 @@ import { useQuery } from "@tanstack/react-query";
 import { API_BASE_URL } from "@/config/api";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import AuthTabsCard from "@/components/ui/auth-tabs-card";
+import { Input } from "@/components/ui/input";
+import { EmptyState, ErrorState, LoadingState } from "@/components/consumer/states";
+import { MetaPair, SectionHeader, StatusBadge, SurfaceCard } from "@/components/consumer/patterns";
 
 const mapCategories = [
   "Masjid",
@@ -94,9 +97,21 @@ const consumerApi = createConsumerApi({
 
 function PlaceholderBody({ label }: { label: string }) {
   return (
-    <p className="text-sm text-muted-foreground">
-      {label} page scaffold is ready for feature implementation.
-    </p>
+    <div className="space-y-3">
+      <p className="text-sm text-muted-foreground">
+        {label} is ready with production layout, responsive spacing, and state patterns.
+      </p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <SurfaceCard>
+          <p className="text-sm font-medium">Consistent card system</p>
+          <p className="text-xs text-muted-foreground">Shared surfaces and hierarchy across consumer screens.</p>
+        </SurfaceCard>
+        <SurfaceCard>
+          <p className="text-sm font-medium">Robust states</p>
+          <p className="text-xs text-muted-foreground">Loading, empty, and error UX can be dropped in quickly.</p>
+        </SurfaceCard>
+      </div>
+    </div>
   );
 }
 
@@ -119,30 +134,30 @@ export function AuthLandingPage() {
     >
       <div className="space-y-4">
         <div className="grid gap-2 sm:grid-cols-2">
-          <div className="rounded-lg border border-border/60 bg-background/60 p-3">
+          <SurfaceCard className="p-3">
             <p className="font-medium">Phone + OTP</p>
             <p className="text-xs text-muted-foreground">
               Passwordless login with SMS verification.
             </p>
-          </div>
-          <div className="rounded-lg border border-border/60 bg-background/60 p-3">
+          </SurfaceCard>
+          <SurfaceCard className="p-3">
             <p className="font-medium">Email + Password</p>
             <p className="text-xs text-muted-foreground">
               Traditional account login and recovery path.
             </p>
-          </div>
-          <div className="rounded-lg border border-border/60 bg-background/60 p-3">
+          </SurfaceCard>
+          <SurfaceCard className="p-3">
             <p className="font-medium">Google</p>
             <p className="text-xs text-muted-foreground">
               One-click OAuth sign in from your Google account.
             </p>
-          </div>
-          <div className="rounded-lg border border-border/60 bg-background/60 p-3">
+          </SurfaceCard>
+          <SurfaceCard className="p-3">
             <p className="font-medium">Apple</p>
             <p className="text-xs text-muted-foreground">
               Privacy-first Apple login for supported browsers.
             </p>
-          </div>
+          </SurfaceCard>
         </div>
         <p className="text-sm text-muted-foreground">Session status: {status}</p>
       </div>
@@ -213,7 +228,10 @@ export function CompleteProfilePage() {
 export function SessionLoadingPage() {
   return (
     <PageScaffold title="Restoring Session" description="Refreshing auth and rehydrating app state.">
-      <PlaceholderBody label="Session loading" />
+      <LoadingState
+        title="Restoring your session"
+        description="Checking authentication providers and secure tokens..."
+      />
     </PageScaffold>
   );
 }
@@ -298,24 +316,29 @@ export function MapPage() {
       description="Map-first home. Default category: Masjid with contextual sub-filters."
     >
       <div className="space-y-4">
+        <SectionHeader
+          title="Nearby organizations"
+          subtitle="Browse by category, then refine using contextual filters."
+          trailing={<Badge variant="secondary">{filtered.length} visible</Badge>}
+        />
         <div className="flex flex-wrap gap-2">
           {mapCategories.map((category) => (
             <Badge
               key={category}
               variant={category === activeCategory ? "default" : "outline"}
-              className="cursor-pointer"
+              className="cursor-pointer px-3 py-1"
               onClick={() => setActiveCategory(category)}
             >
               {category}
             </Badge>
           ))}
         </div>
-        <div className="space-y-2 rounded-lg border border-border/60 bg-background/60 p-3">
-          <input
+        <SurfaceCard className="space-y-3">
+          <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search in current map scope..."
-            className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm"
+            type="search"
           />
           {activeCategory === "Masjid" && (
             <>
@@ -358,49 +381,59 @@ export function MapPage() {
               </div>
             </>
           )}
-        </div>
-        <div className="h-[420px] min-h-[320px] w-full">
-          <MapView
-            entities={filtered}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-            onBoundsChange={setBbox}
-          />
+        </SurfaceCard>
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
+          <div className="h-[420px] min-h-[320px] w-full">
+            <MapView
+              entities={filtered}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              onBoundsChange={setBbox}
+            />
+          </div>
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Entity list</p>
+            {filtered.length === 0 ? (
+              <EmptyState
+                title="No organizations in view"
+                description="Try zooming out, moving the map, or clearing filters."
+              />
+            ) : (
+              filtered.slice(0, 8).map((entity) => (
+                <SurfaceCard key={entity.id}>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-medium">{entity.name}</p>
+                    <StatusBadge openNow={entity.openNow} />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {entity.type ?? "—"} · {entity.sect ?? "N/A"}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button size="sm" variant="outline" asChild>
+                      <Link to={`/entities/${entity.id}`}>View</Link>
+                    </Button>
+                    <Button size="sm" variant="outline" asChild>
+                      <Link to={`/requests/new?org=${entity.id}`}>Request</Link>
+                    </Button>
+                    <a
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${entity.lat},${entity.lng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Button size="sm" variant="outline">Directions</Button>
+                    </a>
+                  </div>
+                </SurfaceCard>
+              ))
+            )}
+          </div>
         </div>
         {nearbyQuery.isError && (
-          <p className="text-sm text-muted-foreground">
-            Using sample data. Backend /organizations/nearby will be used when available.
-          </p>
+          <ErrorState
+            title="Live nearby data unavailable"
+            description="Showing built-in sample data while the organizations endpoint is unavailable."
+          />
         )}
-        <div className="space-y-2">
-          <p className="text-sm font-medium">Entity list</p>
-          {filtered.slice(0, 8).map((entity) => (
-            <div
-              key={entity.id}
-              className="rounded-lg border border-border/60 bg-background/70 p-3"
-            >
-              <p className="font-medium">{entity.name}</p>
-              <p className="text-sm text-muted-foreground">
-                {entity.type ?? "—"} · {entity.sect ?? "N/A"} · {entity.openNow ? "Open" : "Closed"}
-              </p>
-              <div className="mt-2 flex gap-2">
-                <Button size="sm" variant="outline" asChild>
-                  <Link to={`/entities/${entity.id}`}>View</Link>
-                </Button>
-                <Button size="sm" variant="outline" asChild>
-                  <Link to={`/requests/new?org=${entity.id}`}>Request</Link>
-                </Button>
-                <a
-                  href={`https://www.google.com/maps/dir/?api=1&destination=${entity.lat},${entity.lng}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Button size="sm" variant="outline">Directions</Button>
-                </a>
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
     </PageScaffold>
   );
@@ -419,22 +452,23 @@ export function ServicesListPage() {
     queryKey: ["services"],
     queryFn: () => consumerApi.getServices(),
   });
+  const services = servicesQuery.data ?? [];
 
   return (
     <PageScaffold title="Services" description="Service discovery list filtered by map/category context.">
       {servicesQuery.isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading services...</p>
+        <LoadingState title="Loading services" />
       ) : servicesQuery.isError ? (
-        <p className="text-sm text-muted-foreground">
-          Services endpoint unavailable. UI scaffold remains ready.
-        </p>
+        <ErrorState title="Services unavailable" description="The services endpoint is currently unreachable." />
+      ) : services.length === 0 ? (
+        <EmptyState title="No services found" description="Try exploring another category or map area." />
       ) : (
-        <div className="space-y-2">
-          {servicesQuery.data.map((service) => (
-            <div key={service.id} className="rounded-md border border-border/60 p-2">
+        <div className="space-y-3">
+          {services.map((service) => (
+            <SurfaceCard key={service.id}>
               <p className="font-medium">{service.name}</p>
-              <p className="text-xs text-muted-foreground">Org: {service.organizationId}</p>
-            </div>
+              <MetaPair label="Organization" value={service.organizationId} />
+            </SurfaceCard>
           ))}
         </div>
       )}
@@ -455,20 +489,23 @@ export function ActivitiesListPage() {
     queryKey: ["activities"],
     queryFn: () => consumerApi.getActivities(),
   });
+  const activities = activitiesQuery.data ?? [];
 
   return (
     <PageScaffold title="Activities" description="Upcoming events, classes, webinars, and drives.">
       {activitiesQuery.isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading activities...</p>
+        <LoadingState title="Loading activities" />
       ) : activitiesQuery.isError ? (
-        <p className="text-sm text-muted-foreground">Activities API unavailable.</p>
+        <ErrorState title="Activities unavailable" description="Unable to fetch activities right now." />
+      ) : activities.length === 0 ? (
+        <EmptyState title="No upcoming activities" description="Check back soon for new classes and events." />
       ) : (
-        <div className="space-y-2">
-          {activitiesQuery.data.map((activity) => (
-            <div key={activity.id} className="rounded-md border border-border/60 p-2">
+        <div className="space-y-3">
+          {activities.map((activity) => (
+            <SurfaceCard key={activity.id}>
               <p className="font-medium">{activity.title}</p>
-              <p className="text-xs text-muted-foreground">Org: {activity.organizationId}</p>
-            </div>
+              <MetaPair label="Organization" value={activity.organizationId} />
+            </SurfaceCard>
           ))}
         </div>
       )}
@@ -489,22 +526,25 @@ export function PrayerDashboardPage() {
     queryKey: ["prayer-times"],
     queryFn: () => consumerApi.getPrayerTimes(),
   });
+  const prayerTimes = prayerTimesQuery.data;
 
   return (
     <PageScaffold title="Prayer Dashboard" description="Prayer times, next prayer, and jamaat updates.">
       {prayerTimesQuery.isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading prayer times...</p>
+        <LoadingState title="Loading prayer times" />
       ) : prayerTimesQuery.isError ? (
-        <p className="text-sm text-muted-foreground">Prayer endpoint unavailable.</p>
+        <ErrorState title="Prayer data unavailable" description="Could not retrieve prayer timings." />
+      ) : !prayerTimes ? (
+        <EmptyState title="Prayer data unavailable" description="No prayer times were returned." />
       ) : (
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {Object.entries(prayerTimesQuery.data)
+          {Object.entries(prayerTimes)
             .filter(([key]) => key !== "date")
             .map(([key, value]) => (
-              <div key={key} className="rounded-md border border-border/60 p-2">
+              <SurfaceCard key={key} className="p-3">
                 <p className="text-xs uppercase text-muted-foreground">{key}</p>
                 <p className="font-medium">{String(value)}</p>
-              </div>
+              </SurfaceCard>
             ))}
         </div>
       )}
@@ -528,22 +568,21 @@ export function HijriCalendarPage() {
     queryKey: ["hijri-date"],
     queryFn: () => consumerApi.getHijriDate(),
   });
+  const hijri = hijriQuery.data;
 
   return (
     <PageScaffold title="Hijri Calendar" description="Islamic dates, events, and authority overrides.">
       {hijriQuery.isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading Hijri calendar...</p>
+        <LoadingState title="Loading Hijri date" />
       ) : hijriQuery.isError ? (
-        <p className="text-sm text-muted-foreground">Hijri endpoint unavailable.</p>
+        <ErrorState title="Hijri date unavailable" description="Could not fetch calendar data." />
+      ) : !hijri ? (
+        <EmptyState title="No calendar data" description="No Hijri date payload was returned." />
       ) : (
-        <div className="space-y-1">
-          <p className="text-sm">
-            Gregorian: <span className="font-medium">{hijriQuery.data.gregorianDate}</span>
-          </p>
-          <p className="text-sm">
-            Hijri: <span className="font-medium">{hijriQuery.data.hijriDate}</span>
-          </p>
-        </div>
+        <SurfaceCard className="space-y-2">
+          <MetaPair label="Gregorian" value={hijri.gregorianDate} />
+          <MetaPair label="Hijri" value={hijri.hijriDate} />
+        </SurfaceCard>
       )}
     </PageScaffold>
   );
@@ -554,22 +593,31 @@ export function RequestsListPage() {
     queryKey: ["requests"],
     queryFn: () => consumerApi.getRequests(),
   });
+  const requests = requestsQuery.data ?? [];
 
   return (
     <PageScaffold title="Requests" description="Track all service requests and current status.">
       {requestsQuery.isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading requests...</p>
+        <LoadingState title="Loading requests" />
       ) : requestsQuery.isError ? (
-        <p className="text-sm text-muted-foreground">Requests API unavailable.</p>
+        <ErrorState title="Requests unavailable" description="Unable to load your requests right now." />
+      ) : requests.length === 0 ? (
+        <EmptyState
+          title="No requests yet"
+          description="Your submitted service requests will appear here."
+          action={
+            <Button asChild size="sm">
+              <Link to="/requests/new">Create a request</Link>
+            </Button>
+          }
+        />
       ) : (
-        <div className="space-y-2">
-          {requestsQuery.data.map((request) => (
-            <div key={request.id} className="rounded-md border border-border/60 p-2">
+        <div className="space-y-3">
+          {requests.map((request) => (
+            <SurfaceCard key={request.id}>
               <p className="font-medium">{request.serviceType}</p>
-              <p className="text-xs text-muted-foreground">
-                {request.status} · Org {request.organizationId}
-              </p>
-            </div>
+              <p className="text-xs text-muted-foreground">{request.status} · Org {request.organizationId}</p>
+            </SurfaceCard>
           ))}
         </div>
       )}
@@ -628,20 +676,14 @@ export function RequestDetailPage() {
   return (
     <PageScaffold title="Request Detail" description="Status timeline and secure communications.">
       {requestQuery.isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading request details...</p>
+        <LoadingState title="Loading request details" />
       ) : requestQuery.isError ? (
-        <p className="text-sm text-muted-foreground">Request detail API unavailable.</p>
+        <ErrorState title="Request detail unavailable" description="Unable to fetch this request." />
       ) : requestQuery.data ? (
-        <div className="space-y-1">
-          <p className="text-sm">
-            <span className="text-muted-foreground">Service:</span>{" "}
-            <span className="font-medium">{requestQuery.data.serviceType}</span>
-          </p>
-          <p className="text-sm">
-            <span className="text-muted-foreground">Status:</span>{" "}
-            <span className="font-medium">{requestQuery.data.status}</span>
-          </p>
-        </div>
+        <SurfaceCard className="space-y-2">
+          <MetaPair label="Service" value={requestQuery.data.serviceType} />
+          <MetaPair label="Status" value={requestQuery.data.status} />
+        </SurfaceCard>
       ) : (
         <PlaceholderBody label="Request detail" />
       )}
@@ -748,7 +790,31 @@ export function DonationHistoryPage() {
 export function ProfilePage() {
   return (
     <PageScaffold title="Profile" description="Account profile and personal settings overview.">
-      <PlaceholderBody label="Profile" />
+      <div className="space-y-4">
+        <SurfaceCard className="space-y-1">
+          <p className="text-sm font-medium">Manage your account</p>
+          <p className="text-sm text-muted-foreground">
+            Update profile details, school preferences, notifications, location, and security providers.
+          </p>
+        </SurfaceCard>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Button asChild variant="outline" className="justify-start">
+            <Link to="/profile/edit">Edit profile</Link>
+          </Button>
+          <Button asChild variant="outline" className="justify-start">
+            <Link to="/profile/school-of-thought">School of thought</Link>
+          </Button>
+          <Button asChild variant="outline" className="justify-start">
+            <Link to="/profile/notifications">Notification settings</Link>
+          </Button>
+          <Button asChild variant="outline" className="justify-start">
+            <Link to="/profile/location">Location settings</Link>
+          </Button>
+          <Button asChild variant="outline" className="justify-start sm:col-span-2">
+            <Link to="/profile/security">Account security</Link>
+          </Button>
+        </div>
+      </div>
     </PageScaffold>
   );
 }
@@ -819,7 +885,7 @@ export function AccountSecurityPage() {
   return (
     <PageScaffold title="Account Security" description="Manage login providers and security controls.">
       <div className="space-y-4">
-        <div className="rounded-lg border border-border/60 bg-background/60 p-4">
+        <SurfaceCard>
           <p className="text-sm font-medium">Linked providers</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {(providers.length ? providers : ["none"]).map((provider) => (
@@ -828,10 +894,10 @@ export function AccountSecurityPage() {
               </Badge>
             ))}
           </div>
-        </div>
+        </SurfaceCard>
 
         <div className="grid gap-4 lg:grid-cols-2">
-          <div className="space-y-2 rounded-lg border border-border/60 bg-background/60 p-4">
+          <SurfaceCard className="space-y-2">
             <p className="text-sm font-medium">Link social providers</p>
             <div className="flex gap-2">
               <Button type="button" variant="outline" onClick={() => void runLink(linkGoogle, "Google linked.")}>
@@ -841,23 +907,21 @@ export function AccountSecurityPage() {
                 Link Apple
               </Button>
             </div>
-          </div>
+          </SurfaceCard>
 
-          <div className="space-y-2 rounded-lg border border-border/60 bg-background/60 p-4">
+          <SurfaceCard className="space-y-2">
             <p className="text-sm font-medium">Link email + password</p>
-            <input
+            <Input
               type="email"
               value={linkEmail}
               onChange={(event) => setLinkEmail(event.target.value)}
               placeholder="Email"
-              className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm"
             />
-            <input
+            <Input
               type="password"
               value={linkPassword}
               onChange={(event) => setLinkPassword(event.target.value)}
               placeholder="Password"
-              className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm"
             />
             <Button
               type="button"
@@ -866,25 +930,23 @@ export function AccountSecurityPage() {
             >
               Link Email
             </Button>
-          </div>
+          </SurfaceCard>
 
-          <div className="space-y-2 rounded-lg border border-border/60 bg-background/60 p-4 lg:col-span-2">
+          <SurfaceCard className="space-y-2 lg:col-span-2">
             <p className="text-sm font-medium">Link phone number</p>
-            <input
+            <Input
               type="tel"
               value={linkPhone}
               onChange={(event) => setLinkPhone(event.target.value)}
               placeholder="+60123456789"
-              className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm"
             />
             {phoneLinkStarted ? (
               <>
-                <input
+                <Input
                   type="text"
                   value={linkOtp}
                   onChange={(event) => setLinkOtp(event.target.value)}
                   placeholder="6-digit OTP"
-                  className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm"
                 />
                 <Button
                   type="button"
@@ -914,7 +976,7 @@ export function AccountSecurityPage() {
               </Button>
             )}
             <div id="phone-link-recaptcha" />
-          </div>
+          </SurfaceCard>
         </div>
 
         {message ? <p className="text-sm text-emerald-500">{message}</p> : null}

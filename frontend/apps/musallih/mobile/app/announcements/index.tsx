@@ -1,13 +1,16 @@
-import { Text } from "react-native";
+import { SectionCard, StateBlock } from "../../src/components/AppUI";
 import { ScreenScaffold } from "../../src/components/ScreenScaffold";
-import { theme } from "../../src/theme/theme";
 
 export default function AnnouncementsScreen() {
   return (
     <ScreenScaffold title="Announcements" description="Organization and authority broadcasts.">
-      <Text style={{ color: theme.colors.mutedForeground, fontFamily: theme.fonts.sans }}>
-        Announcement feed scaffold is ready.
-      </Text>
+      <SectionCard title="Announcement feed">
+        <StateBlock
+          state="empty"
+          title="No announcements yet"
+          description="New community updates will appear here."
+        />
+      </SectionCard>
     </ScreenScaffold>
   );
 }

@@ -1,9 +1,10 @@
-import { Text, View } from "react-native";
+import { ScrollView, StyleSheet } from "react-native";
 import { ScreenScaffold } from "../../src/components/ScreenScaffold";
-import { theme } from "../../src/theme/theme";
+import { ListItemCard, SectionCard, StateBlock } from "../../src/components/AppUI";
 import { createConsumerApi } from "@musallih/api-client";
 import { API_BASE_URL } from "../../src/config/api";
 import { useQuery } from "@tanstack/react-query";
+import { theme } from "../../src/theme/theme";
 
 export default function DiscoverTabScreen() {
   const api = createConsumerApi({ baseUrl: API_BASE_URL });
@@ -17,23 +18,45 @@ export default function DiscoverTabScreen() {
       title="Discover"
       description="Services, activities, and organization discovery."
     >
+      <ScrollView contentContainerStyle={styles.content}>
+        <SectionCard title="Available services" subtitle="Browse offerings across organizations.">
       {servicesQuery.isLoading ? (
-        <Text style={{ color: theme.colors.mutedForeground, fontFamily: theme.fonts.sans }}>
-          Loading services...
-        </Text>
+            <StateBlock
+              state="loading"
+              title="Loading services"
+              description="Pulling the latest service catalog."
+            />
       ) : servicesQuery.isError ? (
-        <Text style={{ color: theme.colors.mutedForeground, fontFamily: theme.fonts.sans }}>
-          Services API unavailable.
-        </Text>
+            <StateBlock
+              state="error"
+              title="Services unavailable"
+              description="Unable to reach the services API."
+              actionLabel="Retry"
+              onAction={() => void servicesQuery.refetch()}
+            />
       ) : (
-        <View style={{ gap: theme.spacing.sm }}>
-          {(servicesQuery.data ?? []).map((service) => (
-            <Text key={service.id} style={{ color: theme.colors.foreground, fontFamily: theme.fonts.sans }}>
-              {service.name}
-            </Text>
-          ))}
-        </View>
+            <>
+              {(servicesQuery.data ?? []).map((service) => (
+                <ListItemCard key={service.id} title={service.name} subtitle="Service" />
+              ))}
+              {(servicesQuery.data?.length ?? 0) === 0 ? (
+                <StateBlock
+                  state="empty"
+                  title="No services published"
+                  description="Check back soon for new services."
+                />
+              ) : null}
+            </>
       )}
+        </SectionCard>
+      </ScrollView>
     </ScreenScaffold>
   );
 }
+
+const styles = StyleSheet.create({
+  content: {
+    gap: theme.spacing.md,
+    paddingBottom: theme.spacing.xl,
+  },
+});

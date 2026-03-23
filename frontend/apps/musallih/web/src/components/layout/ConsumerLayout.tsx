@@ -1,6 +1,6 @@
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { Home, CalendarDays, Compass, ClipboardList, User } from "lucide-react";
-import { cn } from "@musallih/shared";
+import { cn, getNavItemClass } from "@musallih/shared";
 
 const primaryNav = [
   { to: "/map", label: "Map", icon: Home },
@@ -14,22 +14,22 @@ export function ConsumerLayout() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur">
-        <div className="container flex items-center justify-between px-4 py-3 md:px-6">
-          <Link to="/map" className="text-lg font-semibold text-accent">
-            Musallih
-          </Link>
+        <div className="container flex items-center justify-between gap-4 px-4 py-3 md:px-6">
+          <div className="min-w-0">
+            <Link to="/map" className="text-lg font-semibold text-accent">
+              Musallih
+            </Link>
+            <p className="hidden text-xs text-muted-foreground sm:block">
+              Discover trusted services, prayer info, and requests
+            </p>
+          </div>
           <nav className="hidden items-center gap-2 md:flex">
             {primaryNav.map(({ to, label, icon: Icon }) => (
               <NavLink
                 key={to}
                 to={to}
                 className={({ isActive }) =>
-                  cn(
-                    "inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
-                    isActive
-                      ? "bg-accent/15 text-accent"
-                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                  )
+                  getNavItemClass(isActive ? "active" : "inactive")
                 }
               >
                 <Icon className="h-4 w-4" />
@@ -40,7 +40,7 @@ export function ConsumerLayout() {
         </div>
       </header>
 
-      <main className="container px-4 py-6 pb-24 md:px-6 md:pb-8">
+      <main className="container px-4 py-5 pb-24 md:px-6 md:py-6 md:pb-8">
         <Outlet />
       </main>
 

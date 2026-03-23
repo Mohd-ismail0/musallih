@@ -1,13 +1,16 @@
-import { Text } from "react-native";
+import { SectionCard, StateBlock } from "../../src/components/AppUI";
 import { ScreenScaffold } from "../../src/components/ScreenScaffold";
-import { theme } from "../../src/theme/theme";
 
 export default function FamilyScreen() {
   return (
     <ScreenScaffold title="Family" description="Family members, roles, and request context.">
-      <Text style={{ color: theme.colors.mutedForeground, fontFamily: theme.fonts.sans }}>
-        Family flow scaffold is ready.
-      </Text>
+      <SectionCard title="Family members">
+        <StateBlock
+          state="empty"
+          title="No linked family members"
+          description="Invite or add family profiles to manage shared care requests."
+        />
+      </SectionCard>
     </ScreenScaffold>
   );
 }

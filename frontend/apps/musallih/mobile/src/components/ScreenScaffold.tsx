@@ -15,11 +15,13 @@ export function ScreenScaffold({
 }: ScreenScaffoldProps) {
   return (
     <SafeAreaView style={styles.container} edges={["bottom"]}>
-      <View style={styles.header}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.description}>{description}</Text>
+      <View style={styles.inner}>
+        <View style={styles.header}>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.description}>{description}</Text>
+        </View>
+        <View style={styles.content}>{children}</View>
       </View>
-      <View style={styles.content}>{children}</View>
     </SafeAreaView>
   );
 }
@@ -28,11 +30,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.md,
+  },
+  inner: {
+    width: "100%",
+    maxWidth: 760,
+    alignSelf: "center",
   },
   header: {
     paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.sm,
+    paddingBottom: theme.spacing.md,
     gap: theme.spacing.xs,
   },
   title: {
@@ -48,6 +55,6 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingTop: theme.spacing.md,
+    paddingTop: theme.spacing.sm,
   },
 });

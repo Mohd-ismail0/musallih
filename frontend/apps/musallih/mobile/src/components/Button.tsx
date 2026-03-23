@@ -32,7 +32,7 @@ export function Button({
     <TouchableOpacity
       onPress={onPress}
       disabled={disabled}
-      style={[styles.base, variantStyles.container, style]}
+      style={[styles.base, variantStyles.container, disabled && styles.disabled, style]}
       activeOpacity={0.8}
     >
       <Text style={[styles.text, variantStyles.text, textStyle]}>{title}</Text>
@@ -73,6 +73,9 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.md,
     alignItems: "center",
     justifyContent: "center",
+  },
+  disabled: {
+    opacity: 0.55,
   },
   text: {
     fontSize: 16,

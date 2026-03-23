@@ -1,7 +1,6 @@
 import { useLocalSearchParams } from "expo-router";
-import { Text } from "react-native";
+import { ListItemCard, SectionCard } from "../../src/components/AppUI";
 import { ScreenScaffold } from "../../src/components/ScreenScaffold";
-import { theme } from "../../src/theme/theme";
 
 export default function RequestDetailScreen() {
   const { requestId } = useLocalSearchParams<{ requestId: string }>();
@@ -11,9 +10,10 @@ export default function RequestDetailScreen() {
       title="Request Detail"
       description="Track request status and appointment timeline."
     >
-      <Text style={{ color: theme.colors.mutedForeground, fontFamily: theme.fonts.sans }}>
-        Request ID: {requestId}
-      </Text>
+      <SectionCard title="Request overview">
+        <ListItemCard title="Request ID" subtitle={requestId ?? "Unknown"} />
+        <ListItemCard title="Status" subtitle="Pending update from provider" />
+      </SectionCard>
     </ScreenScaffold>
   );
 }
