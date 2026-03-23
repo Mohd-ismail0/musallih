@@ -1,8 +1,14 @@
-import { Tabs } from "expo-router";
+import { Redirect, Tabs } from "expo-router";
 import { Map, CalendarDays, Compass, ClipboardList, User } from "lucide-react-native";
 import { theme } from "../../src/theme/theme";
+import { useMobileAuth } from "../../src/auth/AuthProvider";
 
 export default function TabsLayout() {
+  const { status } = useMobileAuth();
+  if (status !== "authenticated") {
+    return <Redirect href="/(auth)" />;
+  }
+
   return (
     <Tabs
       screenOptions={{

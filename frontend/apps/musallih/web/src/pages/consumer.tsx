@@ -16,6 +16,7 @@ import AuthTabsCard from "@/components/ui/auth-tabs-card";
 import { Input } from "@/components/ui/input";
 import { EmptyState, ErrorState, LoadingState } from "@/components/consumer/states";
 import { MetaPair, SectionHeader, StatusBadge, SurfaceCard } from "@/components/consumer/patterns";
+import { toast } from "sonner";
 
 const mapCategories = [
   "Masjid",
@@ -624,10 +625,12 @@ export function RequestsListPage() {
       ) : (
         <div className="space-y-3">
           {requests.map((request) => (
-            <SurfaceCard key={request.id}>
-              <p className="font-medium">{request.serviceType}</p>
-              <p className="text-xs text-muted-foreground">{request.status} · Org {request.organizationId}</p>
-            </SurfaceCard>
+            <Link key={request.id} to={`/requests/${request.id}`} className="block">
+              <SurfaceCard className="transition-colors hover:border-accent/50">
+                <p className="font-medium">{request.serviceType}</p>
+                <p className="text-xs text-muted-foreground">{request.status} · Org {request.organizationId}</p>
+              </SurfaceCard>
+            </Link>
           ))}
         </div>
       )}
@@ -648,6 +651,7 @@ export function RequestCreatePage() {
     onSuccess: (request) => {
       localStorage.removeItem("request_draft");
       setDraft("");
+      toast.success("Request submitted successfully.");
       navigate(`/requests/${request.id}`);
     },
     onError: () => {

@@ -5,9 +5,14 @@ import { createConsumerApi } from "@musallih/api-client";
 import { API_BASE_URL } from "../../src/config/api";
 import { useQuery } from "@tanstack/react-query";
 import { theme } from "../../src/theme/theme";
+import { useMobileAuth } from "../../src/auth/AuthProvider";
 
 export default function PrayerTabScreen() {
-  const api = createConsumerApi({ baseUrl: API_BASE_URL });
+  const { accessToken } = useMobileAuth();
+  const api = createConsumerApi({
+    baseUrl: API_BASE_URL,
+    getToken: async () => accessToken,
+  });
   const prayerTimesQuery = useQuery({
     queryKey: ["mobile-prayer-times"],
     queryFn: () => api.getPrayerTimes(),
@@ -41,7 +46,7 @@ export default function PrayerTabScreen() {
             .map(([key, value]) => (
                   <ListItemCard
                     key={key}
-                    title={key}
+                    title={key.charAt(0).toUpperCase() + key.slice(1)}
                     subtitle="Local time"
                     rightMeta={String(value)}
                   />
