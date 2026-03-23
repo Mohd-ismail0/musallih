@@ -5,7 +5,7 @@ import { MapView } from "@/components/map/MapView";
 import type { MapEntity, Bbox } from "@/components/map/MapView";
 import { useAuth } from "@/auth/AuthProvider";
 import { useEffect, useState, useMemo } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, Navigate, useParams } from "react-router-dom";
 import { trackWebEvent } from "@/analytics/analytics";
 import { createConsumerApi } from "@musallih/api-client";
 import type { OrganizationSummary } from "@musallih/api-client";
@@ -109,10 +109,10 @@ export function AuthLandingPage() {
       actions={
         <>
           <Button asChild variant="outline">
-            <a href="/auth/sign-in">Sign In</a>
+            <a href="/auth">Sign In</a>
           </Button>
           <Button asChild>
-            <a href="/auth/sign-up">Sign Up</a>
+            <a href="/auth">Sign Up</a>
           </Button>
         </>
       }
@@ -196,51 +196,7 @@ export function SignInPage() {
 }
 
 export function SignUpPage() {
-  const {
-    signInWithEmail,
-    signUpWithEmail,
-    signInWithGoogle,
-    signInWithApple,
-    startPhoneSignIn,
-    verifyPhoneOtp,
-  } = useAuth();
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  const run = async (fn: () => Promise<void>) => {
-    try {
-      setError(null);
-      setBusy(true);
-      await fn();
-    } catch {
-      setError("Sign up failed. Verify provider setup and try again.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <PageScaffold title="Create Account" description="Beautiful sign up with tabbed provider flow.">
-      <AuthTabsCard
-        loading={busy}
-        error={error}
-        onSignInWithEmail={(email, password) => run(() => signInWithEmail(email, password))}
-        onSignUpWithEmail={(_name, email, password) =>
-          run(() => signUpWithEmail(email, password))
-        }
-        onSignInWithGoogle={() => run(() => signInWithGoogle())}
-        onSignInWithApple={() => run(() => signInWithApple())}
-        onStartPhoneAuth={(phoneNumber) =>
-          run(() => startPhoneSignIn(phoneNumber, "phone-signup-recaptcha"))
-        }
-        onVerifyPhoneOtp={(otpCode) => run(() => verifyPhoneOtp(otpCode))}
-      />
-      <div id="phone-signup-recaptcha" />
-      <p className="mt-3 text-center text-xs text-muted-foreground">
-        Link multiple providers anytime in <Link to="/profile/security" className="underline">Account Security</Link>.
-      </p>
-    </PageScaffold>
-  );
+  return <Navigate to="/auth" replace />;
 }
 
 export function CompleteProfilePage() {

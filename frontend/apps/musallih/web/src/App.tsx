@@ -74,9 +74,10 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Navigate to="/map" replace />} />
-            <Route path="/auth" element={<AuthLandingPage />} />
-            <Route path="/auth/sign-in" element={<SignInPage />} />
-            <Route path="/auth/sign-up" element={<SignUpPage />} />
+            <Route path="/auth" element={<SignInPage />} />
+            <Route path="/auth/sign-in" element={<Navigate to="/auth" replace />} />
+            <Route path="/auth/sign-up" element={<Navigate to="/auth" replace />} />
+            <Route path="/auth/signup" element={<Navigate to="/auth" replace />} />
             <Route path="/auth/complete-profile" element={<CompleteProfilePage />} />
             <Route path="/auth/session" element={<SessionLoadingPage />} />
 

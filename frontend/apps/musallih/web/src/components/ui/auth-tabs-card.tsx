@@ -1,5 +1,6 @@
 import * as React from "react";
 import { FaApple, FaGoogle } from "react-icons/fa";
+import { PhoneInput } from "react-international-phone";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,18 +40,30 @@ export default function AuthTabsCard({
     "sign-in"
   );
   const [name, setName] = React.useState("");
-  const [email, setEmail] = React.useState("");
+  const [identifier, setIdentifier] = React.useState("");
+  const [phoneValue, setPhoneValue] = React.useState("");
+  const [signUpPhoneValue, setSignUpPhoneValue] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const [phone, setPhone] = React.useState("");
   const [otp, setOtp] = React.useState("");
   const [otpRequested, setOtpRequested] = React.useState(false);
+  const [signInMethodOpen, setSignInMethodOpen] = React.useState<
+    "email" | "phone" | null
+  >(null);
+  const [signUpMethodOpen, setSignUpMethodOpen] = React.useState<
+    "email" | "phone" | null
+  >(null);
 
   const toggleTab = () => {
     setActiveTab((prev) => (prev === "sign-in" ? "sign-up" : "sign-in"));
+    setOtpRequested(false);
+    setOtp("");
+    setIdentifier("");
+    setPassword("");
   };
 
   const handlePhoneStart = async () => {
-    await onStartPhoneAuth(phone);
+    const phone = activeTab === "sign-in" ? phoneValue : signUpPhoneValue;
+    await onStartPhoneAuth(phone.trim());
     setOtpRequested(true);
   };
 
@@ -93,71 +106,121 @@ export default function AuthTabsCard({
               </div>
 
               <div>
-                <Label htmlFor="signin-email">Email</Label>
-                <Input
-                  id="signin-email"
-                  type="email"
-                  placeholder="you@example.com"
-                  className="mt-1"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="signin-password">Password</Label>
-                <Input
-                  id="signin-password"
-                  type="password"
-                  placeholder="********"
-                  className="mt-1"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              <Button
-                className="mt-2 w-full"
-                disabled={loading}
-                onClick={() => void onSignInWithEmail(email, password)}
-              >
-                Sign In
-              </Button>
-
-              <div className="rounded-lg border border-border/60 bg-background/40 p-3">
-                <p className="mb-2 text-sm font-medium">Phone OTP</p>
                 <div className="space-y-2">
-                  <Input
-                    type="tel"
-                    placeholder="+60123456789"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                  />
-                  {otpRequested ? (
-                    <>
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between rounded-lg border border-border/60 bg-background/40 px-3 py-2 text-left text-sm font-medium hover:bg-background/60"
+                    onClick={() =>
+                      setSignInMethodOpen((prev) =>
+                        prev === "email" ? null : "email"
+                      )
+                    }
+                  >
+                    Email + Password
+                    <span className="text-muted-foreground">
+                      {signInMethodOpen === "email" ? "−" : "+"}
+                    </span>
+                  </button>
+                  {signInMethodOpen === "email" ? (
+                    <div className="rounded-lg border border-border/60 bg-background/40 p-3">
+                      <Label htmlFor="signin-email">Email</Label>
                       <Input
-                        type="text"
-                        placeholder="6-digit OTP"
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value)}
+                        id="signin-email"
+                        type="email"
+                        placeholder="you@example.com"
+                        className="mt-1"
+                        value={identifier}
+                        onChange={(e) => setIdentifier(e.target.value)}
                       />
+                      <div className="mt-3">
+                        <Label htmlFor="signin-password">Password</Label>
+                        <Input
+                          id="signin-password"
+                          type="password"
+                          placeholder="********"
+                          className="mt-1"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                        />
+                      </div>
                       <Button
-                        className="w-full"
-                        variant="outline"
+                        className="mt-3 w-full"
                         disabled={loading}
-                        onClick={() => void onVerifyPhoneOtp(otp)}
+                        onClick={() =>
+                          void onSignInWithEmail(identifier.trim(), password)
+                        }
                       >
-                        Verify OTP
+                        Sign In
                       </Button>
-                    </>
-                  ) : (
-                    <Button
-                      className="w-full"
-                      variant="outline"
-                      disabled={loading}
-                      onClick={() => void handlePhoneStart()}
-                    >
-                      Send OTP
-                    </Button>
-                  )}
+                    </div>
+                  ) : null}
+
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between rounded-lg border border-border/60 bg-background/40 px-3 py-2 text-left text-sm font-medium hover:bg-background/60"
+                    onClick={() => {
+                      setSignInMethodOpen((prev) =>
+                        prev === "phone" ? null : "phone"
+                      );
+                      setOtpRequested(false);
+                      setOtp("");
+                    }}
+                  >
+                    Phone + OTP
+                    <span className="text-muted-foreground">
+                      {signInMethodOpen === "phone" ? "−" : "+"}
+                    </span>
+                  </button>
+                  {signInMethodOpen === "phone" ? (
+                    <div className="rounded-lg border border-border/60 bg-background/40 p-3">
+                      <Label htmlFor="signin-phone">Phone</Label>
+                      <div className="mt-1 rounded-lg border border-input bg-background px-1 py-1">
+                        <PhoneInput
+                          defaultCountry="my"
+                          value={phoneValue}
+                          onChange={setPhoneValue}
+                          inputClassName="!w-full !border-0 !bg-transparent !text-sm !text-foreground !shadow-none focus:!ring-0"
+                          countrySelectorStyleProps={{
+                            buttonClassName:
+                              "!border-0 !bg-transparent hover:!bg-accent/60 rounded-md",
+                            dropdownStyleProps: {
+                              className:
+                                "!bg-popover !border !border-border !text-foreground !shadow-lg",
+                            },
+                          }}
+                        />
+                      </div>
+                      <div className="mt-3 space-y-2">
+                        {otpRequested ? (
+                          <>
+                            <Input
+                              type="text"
+                              placeholder="6-digit OTP"
+                              value={otp}
+                              onChange={(e) => setOtp(e.target.value)}
+                            />
+                            <Button
+                              className="w-full"
+                              variant="outline"
+                              disabled={loading}
+                              onClick={() => void onVerifyPhoneOtp(otp)}
+                            >
+                              Verify OTP
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            className="w-full"
+                            variant="outline"
+                            disabled={loading}
+                            onClick={() => void handlePhoneStart()}
+                          >
+                            Send OTP
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
@@ -188,34 +251,123 @@ export default function AuthTabsCard({
                 />
               </div>
               <div>
-                <Label htmlFor="signup-email">Email</Label>
-                <Input
-                  id="signup-email"
-                  type="email"
-                  placeholder="you@example.com"
-                  className="mt-1"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between rounded-lg border border-border/60 bg-background/40 px-3 py-2 text-left text-sm font-medium hover:bg-background/60"
+                    onClick={() =>
+                      setSignUpMethodOpen((prev) =>
+                        prev === "email" ? null : "email"
+                      )
+                    }
+                  >
+                    Email + Password
+                    <span className="text-muted-foreground">
+                      {signUpMethodOpen === "email" ? "−" : "+"}
+                    </span>
+                  </button>
+                  {signUpMethodOpen === "email" ? (
+                    <div className="rounded-lg border border-border/60 bg-background/40 p-3">
+                      <Label htmlFor="signup-email">Email</Label>
+                      <Input
+                        id="signup-email"
+                        type="email"
+                        placeholder="you@example.com"
+                        className="mt-1"
+                        value={identifier}
+                        onChange={(e) => setIdentifier(e.target.value)}
+                      />
+                      <div className="mt-3">
+                        <Label htmlFor="signup-password">Password</Label>
+                        <Input
+                          id="signup-password"
+                          type="password"
+                          placeholder="********"
+                          className="mt-1"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                        />
+                      </div>
+                      <Button
+                        className="mt-3 w-full"
+                        disabled={loading}
+                        onClick={() =>
+                          void onSignUpWithEmail(name, identifier.trim(), password)
+                        }
+                      >
+                        Sign Up
+                      </Button>
+                    </div>
+                  ) : null}
+
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between rounded-lg border border-border/60 bg-background/40 px-3 py-2 text-left text-sm font-medium hover:bg-background/60"
+                    onClick={() => {
+                      setSignUpMethodOpen((prev) =>
+                        prev === "phone" ? null : "phone"
+                      );
+                      setOtpRequested(false);
+                      setOtp("");
+                    }}
+                  >
+                    Phone + OTP
+                    <span className="text-muted-foreground">
+                      {signUpMethodOpen === "phone" ? "−" : "+"}
+                    </span>
+                  </button>
+                  {signUpMethodOpen === "phone" ? (
+                    <div className="rounded-lg border border-border/60 bg-background/40 p-3">
+                      <Label htmlFor="signup-phone">Phone</Label>
+                      <div className="mt-1 rounded-lg border border-input bg-background px-1 py-1">
+                        <PhoneInput
+                          defaultCountry="my"
+                          value={signUpPhoneValue}
+                          onChange={setSignUpPhoneValue}
+                          inputClassName="!w-full !border-0 !bg-transparent !text-sm !text-foreground !shadow-none focus:!ring-0"
+                          countrySelectorStyleProps={{
+                            buttonClassName:
+                              "!border-0 !bg-transparent hover:!bg-accent/60 rounded-md",
+                            dropdownStyleProps: {
+                              className:
+                                "!bg-popover !border !border-border !text-foreground !shadow-lg",
+                            },
+                          }}
+                        />
+                      </div>
+                      <div className="mt-3 space-y-2">
+                        {otpRequested ? (
+                          <>
+                            <Input
+                              type="text"
+                              placeholder="6-digit OTP"
+                              value={otp}
+                              onChange={(e) => setOtp(e.target.value)}
+                            />
+                            <Button
+                              className="w-full"
+                              variant="outline"
+                              disabled={loading}
+                              onClick={() => void onVerifyPhoneOtp(otp)}
+                            >
+                              Verify OTP
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            className="w-full"
+                            variant="outline"
+                            disabled={loading}
+                            onClick={() => void handlePhoneStart()}
+                          >
+                            Send OTP
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
               </div>
-              <div>
-                <Label htmlFor="signup-password">Password</Label>
-                <Input
-                  id="signup-password"
-                  type="password"
-                  placeholder="********"
-                  className="mt-1"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              <Button
-                className="mt-2 w-full"
-                disabled={loading}
-                onClick={() => void onSignUpWithEmail(name, email, password)}
-              >
-                Sign Up
-              </Button>
 
               <div className="my-2 flex items-center justify-center text-sm text-muted-foreground">
                 or continue with
