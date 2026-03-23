@@ -5,11 +5,11 @@ import { MapView } from "@/components/map/MapView";
 import type { MapEntity, Bbox } from "@/components/map/MapView";
 import { useAuth } from "@/auth/AuthProvider";
 import { useEffect, useState, useMemo } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { trackWebEvent } from "@/analytics/analytics";
 import { createConsumerApi } from "@musallih/api-client";
 import type { OrganizationSummary } from "@musallih/api-client";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { API_BASE_URL } from "@/config/api";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import AuthTabsCard from "@/components/ui/auth-tabs-card";
@@ -636,7 +636,24 @@ export function RequestsListPage() {
 }
 
 export function RequestCreatePage() {
+  const navigate = useNavigate();
   const [draft, setDraft] = useState(() => localStorage.getItem("request_draft") || "");
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const createRequestMutation = useMutation({
+    mutationFn: () =>
+      consumerApi.createRequest({
+        description: draft,
+        serviceType: "General",
+      }),
+    onSuccess: (request) => {
+      localStorage.removeItem("request_draft");
+      setDraft("");
+      navigate(`/requests/${request.id}`);
+    },
+    onError: () => {
+      setSubmitError("Unable to submit request. Please verify account/session and try again.");
+    },
+  });
 
   useEffect(() => {
     localStorage.setItem("request_draft", draft);
@@ -658,6 +675,19 @@ export function RequestCreatePage() {
         <p className="text-xs text-muted-foreground">
           Draft is persisted locally for offline recovery.
         </p>
+        {submitError ? <p className="text-xs text-destructive">{submitError}</p> : null}
+        <div className="flex justify-end">
+          <Button
+            type="button"
+            disabled={!draft.trim() || createRequestMutation.isPending}
+            onClick={() => {
+              setSubmitError(null);
+              createRequestMutation.mutate();
+            }}
+          >
+            {createRequestMutation.isPending ? "Submitting..." : "Submit Request"}
+          </Button>
+        </div>
       </div>
     </PageScaffold>
   );

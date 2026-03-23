@@ -7,12 +7,18 @@ import { createConsumerApi } from "@musallih/api-client";
 import { API_BASE_URL } from "../../src/config/api";
 import { useQuery } from "@tanstack/react-query";
 import { theme } from "../../src/theme/theme";
+import { useMobileAuth } from "../../src/auth/AuthProvider";
 
 export default function RequestsTabScreen() {
-  const api = createConsumerApi({ baseUrl: API_BASE_URL });
+  const { accessToken, status } = useMobileAuth();
+  const api = createConsumerApi({
+    baseUrl: API_BASE_URL,
+    getToken: async () => accessToken,
+  });
   const requestsQuery = useQuery({
     queryKey: ["mobile-requests"],
     queryFn: () => api.getRequests(),
+    enabled: status === "authenticated",
   });
 
   return (

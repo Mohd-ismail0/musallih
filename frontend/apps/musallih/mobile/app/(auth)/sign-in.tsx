@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { Button } from "../../src/components/Button";
@@ -7,7 +7,7 @@ import { useMobileAuth } from "../../src/auth/AuthProvider";
 import { theme } from "../../src/theme/theme";
 
 export default function SignInScreen() {
-  const { signInWithEmail } = useMobileAuth();
+  const { signInWithEmail, status } = useMobileAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -18,13 +18,18 @@ export default function SignInScreen() {
       setError(null);
       setBusy(true);
       await signInWithEmail(email, password);
-      router.replace("/(tabs)/map");
     } catch {
       setError("Sign in failed. Check credentials and Firebase config.");
     } finally {
       setBusy(false);
     }
   };
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace("/(tabs)/map");
+    }
+  }, [status]);
 
   return (
     <ScreenScaffold

@@ -5,9 +5,9 @@ import { PrismaService } from '../prisma';
 export class ServicesService {
   constructor(private prisma: PrismaService) {}
 
-  async listByOrganization(organizationId: string) {
+  async listByOrganization(organizationId?: string) {
     return this.prisma.service.findMany({
-      where: { organizationId },
+      where: organizationId ? { organizationId } : undefined,
     });
   }
 }

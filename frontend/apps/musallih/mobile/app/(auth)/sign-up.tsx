@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Text, TextInput, View, StyleSheet, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { Button } from "../../src/components/Button";
@@ -7,7 +7,7 @@ import { useMobileAuth } from "../../src/auth/AuthProvider";
 import { theme } from "../../src/theme/theme";
 
 export default function SignUpScreen() {
-  const { signUpWithEmail } = useMobileAuth();
+  const { signUpWithEmail, status } = useMobileAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -23,13 +23,18 @@ export default function SignUpScreen() {
       setError(null);
       setBusy(true);
       await signUpWithEmail(email, password);
-      router.replace("/(tabs)/map");
     } catch {
       setError("Sign up failed. Verify Firebase email/password setup.");
     } finally {
       setBusy(false);
     }
   };
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace("/(tabs)/map");
+    }
+  }, [status]);
 
   return (
     <ScreenScaffold

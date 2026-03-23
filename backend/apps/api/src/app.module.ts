@@ -16,6 +16,7 @@ import { JobsModule } from './jobs/jobs.module';
 import { ServicesModule } from './services/services.module';
 import { RequestsModule } from './requests/requests.module';
 import { DonationsModule } from './donations/donations.module';
+import { ActivitiesModule } from './activities/activities.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { DonationsModule } from './donations/donations.module';
     AdsModule,
     JobsModule,
     ServicesModule,
+    ActivitiesModule,
     RequestsModule,
     DonationsModule,
   ],
