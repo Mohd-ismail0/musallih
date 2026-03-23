@@ -1,11 +1,12 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { OrganizationService } from './organization.service';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { Public } from '../auth/jwt-auth.guard';
+import { NearbyOrganizationsQueryDto } from './dto/nearby-organizations-query.dto';
 
 @ApiTags('organization')
-@Controller('organization')
+@Controller(['organization', 'organizations'])
 export class OrganizationController {
   constructor(private organization: OrganizationService) {}
 
@@ -28,6 +29,13 @@ export class OrganizationController {
   @ApiOperation({ summary: 'Get parent organization (for branches)' })
   findParent(@Param('id') id: string) {
     return this.organization.findParent(id);
+  }
+
+  @Get('nearby')
+  @Public()
+  @ApiOperation({ summary: 'Find nearby organizations for map discovery' })
+  nearby(@Query() query: NearbyOrganizationsQueryDto) {
+    return this.organization.findNearby(query);
   }
 
   @Get(':id')
