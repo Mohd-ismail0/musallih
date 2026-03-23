@@ -180,9 +180,7 @@ export class OrganizationService {
     return null;
   }
 
-  private parseGeoLocation(
-    geoLocation?: string | null,
-  ): { lat: number; lng: number } | null {
+  private parseGeoLocation(geoLocation?: string | null): { lat: number; lng: number } | null {
     if (!geoLocation) return null;
     const value = geoLocation.trim();
 
@@ -222,10 +220,7 @@ export class OrganizationService {
   ): boolean {
     const [minLng, minLat, maxLng, maxLat] = bbox;
     return (
-      coords.lng >= minLng &&
-      coords.lng <= maxLng &&
-      coords.lat >= minLat &&
-      coords.lat <= maxLat
+      coords.lng >= minLng && coords.lng <= maxLng && coords.lat >= minLat && coords.lat <= maxLat
     );
   }
 }
