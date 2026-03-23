@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma';
 import { CreateRequestDto } from './dto/create-request.dto';
 
@@ -33,7 +38,9 @@ export class RequestsService {
       : await this.prisma.service.findFirst({
           where: {
             ...(dto.organizationId ? { organizationId: dto.organizationId } : {}),
-            ...(dto.serviceType ? { name: { contains: dto.serviceType, mode: 'insensitive' } } : {}),
+            ...(dto.serviceType
+              ? { name: { contains: dto.serviceType, mode: 'insensitive' } }
+              : {}),
           },
           orderBy: { id: 'asc' },
         });
