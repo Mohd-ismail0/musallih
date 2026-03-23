@@ -11,37 +11,54 @@ export default function SignInScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const handleSignIn = async () => {
     try {
       setError(null);
+      setBusy(true);
       await signInWithEmail(email, password);
       router.replace("/(tabs)/map");
     } catch {
       setError("Sign in failed. Check credentials and Firebase config.");
+    } finally {
+      setBusy(false);
     }
   };
 
   return (
-    <ScreenScaffold title="Sign In" description="Authenticate with Firebase.">
+    <ScreenScaffold
+      title="Sign In"
+      description="Use email/password now. Google, Apple, and phone OTP can be linked from web security settings."
+    >
       <View style={styles.container}>
-        <TextInput
-          placeholder="Email"
-          placeholderTextColor={theme.colors.mutedForeground}
-          value={email}
-          onChangeText={setEmail}
-          style={styles.input}
-          autoCapitalize="none"
-        />
-        <TextInput
-          placeholder="Password"
-          placeholderTextColor={theme.colors.mutedForeground}
-          value={password}
-          onChangeText={setPassword}
-          style={styles.input}
-          secureTextEntry
-        />
-        <Button title="Sign In" onPress={handleSignIn} />
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Email + Password</Text>
+          <TextInput
+            placeholder="Email"
+            placeholderTextColor={theme.colors.mutedForeground}
+            value={email}
+            onChangeText={setEmail}
+            style={styles.input}
+            autoCapitalize="none"
+          />
+          <TextInput
+            placeholder="Password"
+            placeholderTextColor={theme.colors.mutedForeground}
+            value={password}
+            onChangeText={setPassword}
+            style={styles.input}
+            secureTextEntry
+          />
+          <Button title={busy ? "Signing In..." : "Sign In"} onPress={handleSignIn} disabled={busy} />
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Other providers</Text>
+          <Button title="Continue with Google (link on web)" onPress={() => {}} disabled variant="outline" />
+          <Button title="Continue with Apple (link on web)" onPress={() => {}} disabled variant="outline" />
+          <Button title="Phone OTP (link on web)" onPress={() => {}} disabled variant="outline" />
+        </View>
         {error ? <Text style={styles.error}>{error}</Text> : null}
       </View>
     </ScreenScaffold>
@@ -51,6 +68,20 @@ export default function SignInScreen() {
 const styles = StyleSheet.create({
   container: {
     gap: theme.spacing.md,
+  },
+  card: {
+    gap: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.card,
+    padding: theme.spacing.md,
+  },
+  cardTitle: {
+    color: theme.colors.foreground,
+    fontFamily: theme.fonts.sans,
+    fontWeight: "600",
+    fontSize: 15,
   },
   input: {
     borderWidth: 1,

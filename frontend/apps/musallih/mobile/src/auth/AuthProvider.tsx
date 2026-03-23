@@ -9,6 +9,7 @@ import {
 } from "react";
 import {
   onAuthStateChanged,
+  createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   type User,
@@ -25,6 +26,7 @@ interface MobileAuthContextValue {
   user: User | null;
   accessToken: string | null;
   signInWithEmail: (email: string, password: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -77,6 +79,10 @@ export function MobileAuthProvider({ children }: { children: ReactNode }) {
     await signInWithEmailAndPassword(mobileFirebaseAuth, email, password);
   }, []);
 
+  const signUpWithEmail = useCallback(async (email: string, password: string) => {
+    await createUserWithEmailAndPassword(mobileFirebaseAuth, email, password);
+  }, []);
+
   const signOut = useCallback(async () => {
     await firebaseSignOut(mobileFirebaseAuth);
   }, []);
@@ -87,9 +93,10 @@ export function MobileAuthProvider({ children }: { children: ReactNode }) {
       user,
       accessToken,
       signInWithEmail,
+      signUpWithEmail,
       signOut,
     }),
-    [status, user, accessToken, signInWithEmail, signOut]
+    [status, user, accessToken, signInWithEmail, signUpWithEmail, signOut]
   );
 
   return <MobileAuthContext.Provider value={value}>{children}</MobileAuthContext.Provider>;

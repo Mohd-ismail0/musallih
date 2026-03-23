@@ -104,7 +104,7 @@ export function AuthLandingPage() {
   return (
     <PageScaffold
       title="Welcome to Musallih"
-      description="Choose sign in or sign up to continue."
+      description="Secure sign-in with phone OTP, email/password, Google, or Apple."
       actions={
         <>
           <Button asChild variant="outline">
@@ -116,8 +116,33 @@ export function AuthLandingPage() {
         </>
       }
     >
-      <div className="space-y-3">
-        <PlaceholderBody label="Auth landing" />
+      <div className="space-y-4">
+        <div className="grid gap-2 sm:grid-cols-2">
+          <div className="rounded-lg border border-border/60 bg-background/60 p-3">
+            <p className="font-medium">Phone + OTP</p>
+            <p className="text-xs text-muted-foreground">
+              Passwordless login with SMS verification.
+            </p>
+          </div>
+          <div className="rounded-lg border border-border/60 bg-background/60 p-3">
+            <p className="font-medium">Email + Password</p>
+            <p className="text-xs text-muted-foreground">
+              Traditional account login and recovery path.
+            </p>
+          </div>
+          <div className="rounded-lg border border-border/60 bg-background/60 p-3">
+            <p className="font-medium">Google</p>
+            <p className="text-xs text-muted-foreground">
+              One-click OAuth sign in from your Google account.
+            </p>
+          </div>
+          <div className="rounded-lg border border-border/60 bg-background/60 p-3">
+            <p className="font-medium">Apple</p>
+            <p className="text-xs text-muted-foreground">
+              Privacy-first Apple login for supported browsers.
+            </p>
+          </div>
+        </div>
         <p className="text-sm text-muted-foreground">Session status: {status}</p>
       </div>
     </PageScaffold>
@@ -125,56 +150,248 @@ export function AuthLandingPage() {
 }
 
 export function SignInPage() {
-  const { signInWithEmail } = useAuth();
+  const { signInWithEmail, signInWithGoogle, signInWithApple, startPhoneSignIn, verifyPhoneOtp } =
+    useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [awaitingOtp, setAwaitingOtp] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const run = async (name: string, fn: () => Promise<void>) => {
     try {
       setError(null);
-      await signInWithEmail(email, password);
-    } catch (signInError) {
-      setError("Sign in failed. Verify credentials and Firebase config.");
+      setBusy(name);
+      await fn();
+    } catch {
+      setError("Authentication failed. Verify provider setup and try again.");
+    } finally {
+      setBusy(null);
     }
   };
 
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    await run("email", () => signInWithEmail(email, password));
+  };
+
+  const handlePhoneStart = async () => {
+    await run("phone-start", async () => {
+      await startPhoneSignIn(phoneNumber, "phone-signin-recaptcha");
+      setAwaitingOtp(true);
+    });
+  };
+
+  const handlePhoneVerify = async () => {
+    await run("phone-verify", () => verifyPhoneOtp(otpCode));
+  };
+
   return (
-    <PageScaffold title="Sign In" description="Authenticate with Firebase and continue.">
-      <form onSubmit={handleSubmit} className="space-y-3 max-w-md">
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm"
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm"
-          required
-        />
-        <div className="flex items-center gap-2">
-          <Button type="submit">Sign In</Button>
-          <Button type="button" variant="outline" asChild>
-            <Link to="/auth/sign-up">Create account</Link>
-          </Button>
+    <PageScaffold title="Sign In" description="Use any supported provider to continue securely.">
+      <div className="grid gap-4 lg:grid-cols-2">
+        <form onSubmit={handleSubmit} className="space-y-3 rounded-xl border border-border/60 bg-background/60 p-4">
+          <p className="text-sm font-medium">Email + Password</p>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm"
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm"
+            required
+          />
+          <div className="flex items-center gap-2">
+            <Button type="submit" disabled={busy != null}>
+              {busy === "email" ? "Signing In..." : "Sign In"}
+            </Button>
+            <Button type="button" variant="outline" asChild>
+              <Link to="/auth/sign-up">Create account</Link>
+            </Button>
+          </div>
+        </form>
+
+        <div className="space-y-3 rounded-xl border border-border/60 bg-background/60 p-4">
+          <p className="text-sm font-medium">Phone + OTP</p>
+          <input
+            type="tel"
+            placeholder="+60123456789"
+            value={phoneNumber}
+            onChange={(event) => setPhoneNumber(event.target.value)}
+            className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm"
+          />
+          {awaitingOtp ? (
+            <>
+              <input
+                type="text"
+                placeholder="6-digit OTP"
+                value={otpCode}
+                onChange={(event) => setOtpCode(event.target.value)}
+                className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm"
+              />
+              <Button type="button" onClick={handlePhoneVerify} disabled={busy != null}>
+                {busy === "phone-verify" ? "Verifying..." : "Verify OTP"}
+              </Button>
+            </>
+          ) : (
+            <Button type="button" onClick={handlePhoneStart} disabled={busy != null}>
+              {busy === "phone-start" ? "Sending OTP..." : "Send OTP"}
+            </Button>
+          )}
+          <div id="phone-signin-recaptcha" />
         </div>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      </form>
+
+        <div className="space-y-3 rounded-xl border border-border/60 bg-background/60 p-4 lg:col-span-2">
+          <p className="text-sm font-medium">Social providers</p>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" onClick={() => void run("google", signInWithGoogle)} disabled={busy != null}>
+              {busy === "google" ? "Google..." : "Continue with Google"}
+            </Button>
+            <Button type="button" variant="outline" onClick={() => void run("apple", signInWithApple)} disabled={busy != null}>
+              {busy === "apple" ? "Apple..." : "Continue with Apple"}
+            </Button>
+          </div>
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        </div>
+      </div>
     </PageScaffold>
   );
 }
 
 export function SignUpPage() {
+  const { signUpWithEmail, signInWithGoogle, signInWithApple, startPhoneSignIn, verifyPhoneOtp } =
+    useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [awaitingOtp, setAwaitingOtp] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const run = async (name: string, fn: () => Promise<void>) => {
+    try {
+      setError(null);
+      setBusy(name);
+      await fn();
+    } catch {
+      setError("Sign up failed. Verify provider setup and try again.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleEmailSignUp = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    await run("email-signup", () => signUpWithEmail(email, password));
+  };
+
   return (
-    <PageScaffold title="Sign Up" description="Create your account with required PRD fields.">
-      <PlaceholderBody label="Sign up" />
+    <PageScaffold title="Create Account" description="Choose your preferred provider, then complete profile.">
+      <div className="grid gap-4 lg:grid-cols-2">
+        <form onSubmit={handleEmailSignUp} className="space-y-3 rounded-xl border border-border/60 bg-background/60 p-4">
+          <p className="text-sm font-medium">Email + Password sign up</p>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm"
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm"
+            required
+          />
+          <input
+            type="password"
+            placeholder="Confirm password"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm"
+            required
+          />
+          <Button type="submit" disabled={busy != null}>
+            {busy === "email-signup" ? "Creating..." : "Create account"}
+          </Button>
+        </form>
+
+        <div className="space-y-3 rounded-xl border border-border/60 bg-background/60 p-4">
+          <p className="text-sm font-medium">Phone + OTP sign up</p>
+          <input
+            type="tel"
+            placeholder="+60123456789"
+            value={phoneNumber}
+            onChange={(event) => setPhoneNumber(event.target.value)}
+            className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm"
+          />
+          {awaitingOtp ? (
+            <>
+              <input
+                type="text"
+                placeholder="6-digit OTP"
+                value={otpCode}
+                onChange={(event) => setOtpCode(event.target.value)}
+                className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm"
+              />
+              <Button
+                type="button"
+                disabled={busy != null}
+                onClick={() => void run("phone-verify", () => verifyPhoneOtp(otpCode))}
+              >
+                {busy === "phone-verify" ? "Verifying..." : "Verify OTP"}
+              </Button>
+            </>
+          ) : (
+            <Button
+              type="button"
+              disabled={busy != null}
+              onClick={() =>
+                void run("phone-start", async () => {
+                  await startPhoneSignIn(phoneNumber, "phone-signup-recaptcha");
+                  setAwaitingOtp(true);
+                })
+              }
+            >
+              {busy === "phone-start" ? "Sending OTP..." : "Send OTP"}
+            </Button>
+          )}
+          <div id="phone-signup-recaptcha" />
+        </div>
+
+        <div className="space-y-3 rounded-xl border border-border/60 bg-background/60 p-4 lg:col-span-2">
+          <p className="text-sm font-medium">Social sign up</p>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" onClick={() => void run("google", signInWithGoogle)} disabled={busy != null}>
+              {busy === "google" ? "Google..." : "Continue with Google"}
+            </Button>
+            <Button type="button" variant="outline" onClick={() => void run("apple", signInWithApple)} disabled={busy != null}>
+              {busy === "apple" ? "Apple..." : "Continue with Apple"}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            After signup, go to Profile &gt; Security to link more providers.
+          </p>
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        </div>
+      </div>
     </PageScaffold>
   );
 }
@@ -769,9 +986,137 @@ export function LocationSettingsPage() {
 }
 
 export function AccountSecurityPage() {
+  const {
+    getLinkedProviders,
+    linkGoogle,
+    linkApple,
+    linkEmailPassword,
+    linkPhoneNumber,
+  } = useAuth();
+  const [linkEmail, setLinkEmail] = useState("");
+  const [linkPassword, setLinkPassword] = useState("");
+  const [linkPhone, setLinkPhone] = useState("");
+  const [linkOtp, setLinkOtp] = useState("");
+  const [phoneLinkStarted, setPhoneLinkStarted] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const providers = getLinkedProviders();
+
+  const runLink = async (fn: () => Promise<void>, success: string) => {
+    try {
+      setError(null);
+      setMessage(null);
+      await fn();
+      setMessage(success);
+    } catch {
+      setError("Provider linking failed. Ensure provider is enabled in Firebase console.");
+    }
+  };
+
   return (
     <PageScaffold title="Account Security" description="Manage login providers and security controls.">
-      <PlaceholderBody label="Account security" />
+      <div className="space-y-4">
+        <div className="rounded-lg border border-border/60 bg-background/60 p-4">
+          <p className="text-sm font-medium">Linked providers</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {(providers.length ? providers : ["none"]).map((provider) => (
+              <Badge key={provider} variant={provider === "none" ? "outline" : "default"}>
+                {provider}
+              </Badge>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="space-y-2 rounded-lg border border-border/60 bg-background/60 p-4">
+            <p className="text-sm font-medium">Link social providers</p>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => void runLink(linkGoogle, "Google linked.")}>
+                Link Google
+              </Button>
+              <Button type="button" variant="outline" onClick={() => void runLink(linkApple, "Apple linked.")}>
+                Link Apple
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-2 rounded-lg border border-border/60 bg-background/60 p-4">
+            <p className="text-sm font-medium">Link email + password</p>
+            <input
+              type="email"
+              value={linkEmail}
+              onChange={(event) => setLinkEmail(event.target.value)}
+              placeholder="Email"
+              className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm"
+            />
+            <input
+              type="password"
+              value={linkPassword}
+              onChange={(event) => setLinkPassword(event.target.value)}
+              placeholder="Password"
+              className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void runLink(() => linkEmailPassword(linkEmail, linkPassword), "Email/password linked.")}
+            >
+              Link Email
+            </Button>
+          </div>
+
+          <div className="space-y-2 rounded-lg border border-border/60 bg-background/60 p-4 lg:col-span-2">
+            <p className="text-sm font-medium">Link phone number</p>
+            <input
+              type="tel"
+              value={linkPhone}
+              onChange={(event) => setLinkPhone(event.target.value)}
+              placeholder="+60123456789"
+              className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm"
+            />
+            {phoneLinkStarted ? (
+              <>
+                <input
+                  type="text"
+                  value={linkOtp}
+                  onChange={(event) => setLinkOtp(event.target.value)}
+                  placeholder="6-digit OTP"
+                  className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    void runLink(
+                      () => linkPhoneNumber(linkPhone, "phone-link-recaptcha", linkOtp),
+                      "Phone linked."
+                    )
+                  }
+                >
+                  Verify & Link Phone
+                </Button>
+              </>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  void runLink(async () => {
+                    await linkPhoneNumber(linkPhone, "phone-link-recaptcha");
+                    setPhoneLinkStarted(true);
+                  }, "OTP sent.")
+                }
+              >
+                Send Link OTP
+              </Button>
+            )}
+            <div id="phone-link-recaptcha" />
+          </div>
+        </div>
+
+        {message ? <p className="text-sm text-emerald-500">{message}</p> : null}
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      </div>
     </PageScaffold>
   );
 }
